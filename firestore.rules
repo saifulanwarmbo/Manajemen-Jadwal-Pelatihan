@@ -1,0 +1,140 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (UID)
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - displayName: string (optional)
+    //   - role: string (required, 'admin' | 'user')
+    //
+    // Collection: schedules
+    // Document ID: auto-generated
+    // Fields:
+    //   - dayNumber: number (required)
+    //   - date: string (required, YYYY-MM-DD)
+    //   - startTime: string (required, HH:mm)
+    //   - endTime: string (required, HH:mm)
+    //   - subject: string (required)
+    //   - jp: number (required)
+    //   - instructors: list of strings (required)
+    //   - type: string (required, enum)
+    //   - createdAt: timestamp (required)
+    //   - updatedAt: timestamp (required)
+    //
+    // Collection: instructors
+    // Document ID: auto-generated
+    // Fields:
+    //   - name: string (required)
+    //   - role: string (optional)
+    //   - email: string (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "saiful.anwarmbo@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDate(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}$");
+    }
+
+    function isValidTime(timeStr) {
+      return timeStr is string && timeStr.matches("^\\d{2}:\\d{2}$");
+    }
+
+    // ===============================================================
+    // Validation Functions
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role']) &&
+             data.uid == request.auth.uid &&
+             data.email == request.auth.token.email &&
+             data.role in ['admin', 'user'];
+    }
+
+    function isValidSchedule(data) {
+      return data.keys().hasAll(['dayNumber', 'date', 'startTime', 'endTime', 'subject', 'jp', 'instructors', 'type']) &&
+             data.dayNumber is int &&
+             isValidDate(data.date) &&
+             isValidTime(data.startTime) &&
+             isValidTime(data.endTime) &&
+             data.subject is string && data.subject.size() > 0 && data.subject.size() < 500 &&
+             data.jp is number &&
+             data.instructors is list &&
+             data.type is string && data.type.size() > 0 && data.type.size() < 100;
+    }
+
+    function isValidInstructor(data) {
+      return data.keys().hasAll(['name']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200;
+    }
+
+    function isValidTemplate(data) {
+      return data.keys().hasAll(['name', 'entries']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.entries is list;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && 
+                    (request.resource.data.role == 'user' || isAdmin());
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role == resource.data.role) || 
+                    (isAdmin() && request.resource.data.keys().hasAll(['role']));
+      allow delete: if isAdmin();
+    }
+
+    match /schedules/{scheduleId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidSchedule(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /instructors/{instructorId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidInstructor(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /templates/{templateId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidTemplate(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

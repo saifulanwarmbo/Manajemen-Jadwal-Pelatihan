@@ -1,0 +1,76 @@
+    <span className="uppercase tracking-wider font-mono">{label}</span>
+    <span className={cn("px-2 py-0.5 text-[10px] font-mono uppercase tracking-tighter font-bold rounded", variants[variant])}>
+                  <p className="text-[10px] font-mono opacity-90 truncate uppercase">{userProfile?.role}</p>
+                className="w-full flex items-center gap-2 px-2 py-2 text-[10px] font-mono tracking-wide font-sans text-red-600 hover:bg-red-50 transition-colors"
+          <div className="flex items-center gap-2 text-sm font-mono opacity-90 tracking-wide font-sans">
+                  <p className="text-[10px] font-mono tracking-wide font-sans opacity-90 mb-1">Total Sessions</p>
+                  <p className="text-[10px] font-mono tracking-wide font-sans opacity-90 mb-1">Total Instructors</p>
+                  <p className="text-[10px] font-mono tracking-wide font-sans opacity-90 mb-1">Total JP</p>
+                            <p className="text-[10px] font-mono opacity-90 uppercase">{format(parseISO(s.date), 'MMM')}</p>
+                            <p className="text-[10px] font-mono opacity-90 uppercase mt-1">
+                      <p className="text-center py-12 text-sm font-mono opacity-90 tracking-wide font-sans italic">
+                      <tr className="bg-[#1D1D1B] text-[#FDFBF7] font-mono text-[10px] tracking-wide font-sans">
+                                  <td rowSpan={group.entries.length} className="p-4 text-sm font-mono font-bold border-r border-b border-[#E2DED5]/10 align-top bg-white">
+                                  <td rowSpan={group.entries.length} className="p-4 text-[10px] font-mono border-r border-b border-[#E2DED5]/10 align-top bg-white uppercase tracking-tighter opacity-90">
+                              <td className="p-4 text-sm border-r border-[#E2DED5]/10 whitespace-nowrap font-mono">
+                              <td className="p-4 text-sm text-center border-r border-[#E2DED5]/10 font-mono">{s.jp}</td>
+                          <td colSpan={isAdmin ? 9 : 8} className="p-12 text-center text-sm font-mono opacity-90 tracking-wide font-sans italic">
+                    <p className="text-xs font-mono opacity-90 uppercase tracking-wider mt-1">{inst.role || 'Facilitator'}</p>
+                                <div key={angkatan} className="flex justify-between items-center text-xs font-mono ml-2">
+                          <div className="flex justify-between items-center text-xs font-mono font-bold pt-1 border-t border-[#E2DED5]/10 mt-1">
+                    <p className="text-sm font-mono opacity-90 tracking-wide font-sans italic">// No instructors registered</p>
+                          <p className="text-[10px] font-mono opacity-90 uppercase mt-1">{selectedInstructorForCalendar.role}</p>
+                  <div className="grid grid-cols-7 bg-[#1D1D1B] text-[#FDFBF7] text-[10px] font-mono tracking-wide font-sans">
+                                "text-xs font-mono font-bold",
+                <div className="flex gap-6 text-[10px] font-mono tracking-wide font-sans opacity-90 bg-white p-4 border border-[#E2DED5]">
+                            <td className="p-4 text-sm font-mono opacity-90">{u.email}</td>
+                                  className="p-2 text-xs font-mono tracking-wide font-sans border border-[#E2DED5] bg-white focus:outline-none disabled:opacity-50"
+                            <td colSpan={4} className="p-8 text-center font-mono opacity-90 italic">
+                  <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">Angkatan / Batch</label>
+                  <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">Day Number</label>
+                  <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">Date</label>
+                  <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">Start Time</label>
+                  <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">End Time</label>
+                  <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">Subject / Mata Pelatihan</label>
+                  <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">JP (Lesson Hours)</label>
+                  <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">Session Type</label>
+                    <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">Instructors / Pengajar</label>
+                    <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">Full Name</label>
+                    <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">Role / Title</label>
+                    <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">Email Address</label>
+                        <p className="text-[10px] font-mono opacity-90 italic py-2 text-center border border-dashed border-[#E2DED5]/20">
+                    <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">Source Angkatan / Batch</label>
+                    <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">Target Angkatan / Batch</label>
+                    <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">Date Offset (Days)</label>
+                    <p className="text-[10px] font-mono opacity-90">
+                    <label className="text-[10px] font-mono tracking-wide font-sans opacity-90">Pilih Angkatan / Batch yang akan dihapus</label>
+                    <p className="text-[10px] font-mono text-red-600 mt-2 tracking-wide font-sans">
+                    className="w-full p-3 bg-white border border-[#E2DED5] rounded-xl shadow-sm text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1D1D1B]"
+                  <p className="text-[10px] font-mono opacity-60 mt-1">
+                    className="w-full p-3 bg-white border border-[#E2DED5] rounded-xl shadow-sm text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#1D1D1B] resize-none"
+                    <p className="text-sm font-mono">
+                  <p className="text-sm font-mono mt-1 tracking-wide font-sans">Metode: {trainingMethod}</p>
+                  <p className="text-sm font-mono mt-1">Tanggal Pelaksanaan: {previewDateRangeStr}</p>
+                    <tr className="bg-[#1D1D1B]/5 font-mono tracking-wide font-sans">
+                                <td rowSpan={group.entries.length} className="p-2 font-mono font-bold border border-[#E2DED5]/20 align-top text-center bg-[#1D1D1B]/[0.02]">
+                            <td className="p-2 font-mono border border-[#E2DED5]/20 whitespace-nowrap">{s.startTime} - {s.endTime}</td>
+                            <td className="p-2 font-mono text-center border border-[#E2DED5]/20">{s.jp}</td>
+                        <td colSpan={7} className="p-8 text-center font-mono opacity-90 italic">
+                <p className="text-xs font-mono opacity-90 mt-4 text-red-600 tracking-wide font-sans">
+                      <p className="font-mono tracking-wide font-sans opacity-90 mt-1">{viewingInstructor.role || 'Facilitator'}</p>
+                        <p className="text-[10px] font-mono tracking-wide font-sans opacity-70">Total JP</p>
+                        <p className="text-[10px] font-mono tracking-wide font-sans opacity-70">Total Jam</p>
+                          <thead className="bg-[#1D1D1B] text-[#FDFBF7] font-mono text-[10px] tracking-wide font-sans">
+                                  <td className="p-3 font-mono text-xs">{angkatan}</td>
+                                  <td className="p-3 font-mono text-xs text-right opacity-90">{(Number(jp) * 45) / 60} Jam</td>
+                              <td className="p-3 text-right font-mono text-xs opacity-90">{(instructorJpStats[viewingInstructor.name].totalJp * 45) / 60} Jam</td>
+                          <p className="text-sm font-mono opacity-90 italic">Belum ada Jam Pelajaran (JP) yang tercatat untuk instruktur ini.</p>
+                              <span className="font-mono text-xs opacity-90">
+                      <p className="text-sm font-mono opacity-90 italic">No availability information defined.</p>
+                                <div className="flex items-center gap-2 text-xs font-mono opacity-90 mt-1">
+                                <p className="font-mono text-sm font-bold">{s.startTime} - {s.endTime}</p>
+                    <p className="text-sm font-mono opacity-90 italic">No schedules assigned to this instructor.</p>
+                          <p className="text-[10px] font-mono tracking-wide font-sans text-red-600 mb-2">Conflict #{idx + 1}</p>
+                              <p className="text-xs font-mono">{c.s1.angkatan}</p>
+                              <p className="text-xs font-mono">{c.s2.angkatan}</p>
+                          <p className="text-[10px] mt-2 text-red-600 font-mono italic">

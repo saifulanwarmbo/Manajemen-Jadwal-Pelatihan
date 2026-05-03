@@ -1,0 +1,386 @@
+191:  const [viewingInstructor, setViewingInstructor] = useState<Instructor | null>(null);
+192-  const [instructorAvailability, setInstructorAvailability] = useState<DayAvailability[]>([]);
+193-
+194-  const [isExportReviewModalOpen, setIsExportReviewModalOpen] = useState(false);
+195-  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+196-  const [reminderTiming, setReminderTiming] = useState<number>(24); // hours
+197-  const [reminderMessage, setReminderMessage] = useState("This is a reminder for your upcoming session.");
+198-  const [isSendingReminders, setIsSendingReminders] = useState(false);
+199-  const [reminderResult, setReminderResult] = useState<{success: number, failed: number} | null>(null);
+200-  const [deleteConfirm, setDeleteConfirm] = useState<{type: 'schedule' | 'instructor' | 'user', id: string, label: string} | null>(null);
+201-
+202-  // Duplicate Batch State
+203-  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+204-  const [duplicateSourceAngkatan, setDuplicateSourceAngkatan] = useState('');
+205-  const [duplicateTargetAngkatan, setDuplicateTargetAngkatan] = useState('');
+206-  const [duplicateDateOffset, setDuplicateDateOffset] = useState<number>(0);
+207-
+208-  // Delete Batch State
+209-  const [isDeleteBatchModalOpen, setIsDeleteBatchModalOpen] = useState(false);
+210-  const [deleteBatchTarget, setDeleteBatchTarget] = useState('');
+211-
+212-  // Export Document Config State
+213-  const [trainingMethod, setTrainingMethod] = useState('Distance Learning');
+214-  const [organizer, setOrganizer] = useState('');
+215-
+216-  // Auto-calculate JP
+217-  useEffect(() => {
+218-    if (currentScheduleType === 'Asynchronous') {
+219-      return; // Do not auto-calculate for Asynchronous
+220-    }
+221-    
+222-    if (currentScheduleType === 'Istirahat') {
+223-      setCurrentJp(0);
+224-      return;
+225-    }
+226-    
+227-    if (currentScheduleStartTime && currentScheduleEndTime) {
+228-      const [startH, startM] = currentScheduleStartTime.split(':').map(Number);
+229-      const [endH, endM] = currentScheduleEndTime.split(':').map(Number);
+230-      
+231-      let diffMinutes = (endH * 60 + endM) - (startH * 60 + startM);
+232-      if (diffMinutes > 0) {
+233-        // 1 JP = 45 minutes
+234-        const calculatedJp = Math.round(diffMinutes / 45);
+235-        setCurrentJp(calculatedJp);
+236-      } else {
+237-        setCurrentJp('');
+238-      }
+239-    }
+240-  }, [currentScheduleStartTime, currentScheduleEndTime, currentScheduleType]);
+241-
+242-  // Auto-fill subject for Mandiri Peserta
+243-  useEffect(() => {
+244-    if (selectedInstructorNames.includes('Mandiri Peserta')) {
+245-      setCurrentSubject('Penyelesaian Penugasan Secara Mandiri/Kelompok');
+246-      setCurrentScheduleType('Asynchronous');
+247-    }
+248-  }, [selectedInstructorNames]);
+249-
+250-  // Auto-fill session type for Istirahat
+251-  useEffect(() => {
+252-    if (currentSubject.toLowerCase().includes('istirahat')) {
+253-      setCurrentScheduleType('Istirahat');
+254-    }
+255-  }, [currentSubject]);
+256-
+257-  // Auth & Profile
+258-  useEffect(() => {
+259-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+260-      try {
+261-        setUser(currentUser);
+262-        if (currentUser) {
+263-          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+264-          if (userDoc.exists()) {
+265-            setUserProfile(userDoc.data() as UserProfile);
+266-          } else {
+267-            const isAdmin = currentUser.email === 'saiful.anwarmbo@gmail.com';
+268-            const newProfile: UserProfile = {
+269-              uid: currentUser.uid,
+270-              email: currentUser.email || '',
+271-              displayName: currentUser.displayName || '',
+272-              role: isAdmin ? 'admin' : 'user'
+273-            };
+274-            await setDoc(doc(db, 'users', currentUser.uid), newProfile);
+275-            setUserProfile(newProfile);
+276-          }
+277-        } else {
+278-          setUserProfile(null);
+279-        }
+280-      } catch (error) {
+281-        console.error("Error fetching user profile:", error);
+282-        alert(`Gagal memuat profil pengguna dari database: ${error instanceof Error ? error.message : String(error)}\n\nPastikan aturan keamanan Firestore (Rules) sudah diperbarui dan Anda memiliki akses.`);
+283-      } finally {
+284-        setLoading(false);
+285-      }
+286-    });
+287-    return unsubscribe;
+288-  }, []);
+289-
+290-  // Data Fetching
+291-  useEffect(() => {
+292-    if (!user) return;
+293-
+294-    const qSchedules = query(collection(db, 'schedules'), orderBy('date', 'asc'), orderBy('startTime', 'asc'));
+295-    const unsubSchedules = onSnapshot(qSchedules, (snapshot) => {
+296-      setSchedules(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ScheduleEntry)));
+297-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'schedules'));
+298-
+299-    const qInstructors = query(collection(db, 'instructors'), orderBy('name', 'asc'));
+300-    const unsubInstructors = onSnapshot(qInstructors, (snapshot) => {
+301-      setInstructors(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Instructor)));
+302-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'instructors'));
+303-
+304-    return () => {
+305-      unsubSchedules();
+306-      unsubInstructors();
+307-    };
+308-  }, [user]);
+309-
+310-  const isAdmin = userProfile?.role === 'admin';
+311-
+312-  useEffect(() => {
+313-    if (!user || !isAdmin) return;
+314-
+315-    const qUsers = query(collection(db, 'users'), orderBy('displayName', 'asc'));
+316-    const unsubUsers = onSnapshot(qUsers, (snapshot) => {
+317-      setUsersList(snapshot.docs.map(doc => doc.data() as UserProfile));
+318-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'users'));
+319-
+320-    return () => unsubUsers();
+321-  }, [user, isAdmin]);
+322-
+323-  const allAngkatan = useMemo(() => {
+324-    const angkatans = Array.from(new Set(schedules.map(s => s.angkatan).filter(Boolean)));
+325-    return angkatans.sort();
+326-  }, [schedules]);
+327-
+328-  // Filtering
+329-  const filteredSchedules = useMemo(() => {
+330-    return schedules.filter(s => {
+331-      const sTraining = s.trainingName || TRAINING_PROGRAMS[0];
+332-      if (sTraining !== activeTraining) return false;
+333-
+334-      const matchesSearch = s.subject.toLowerCase().includes(searchTerm.toLowerCase()) || 
+335-                           s.instructors.some(i => i.toLowerCase().includes(searchTerm.toLowerCase()));
+336-      const matchesType = filterType === 'All' || s.type === filterType;
+337-      const matchesAngkatan = selectedAngkatan === 'All' || s.angkatan === selectedAngkatan;
+338-      return matchesSearch && matchesType && matchesAngkatan;
+339-    }).sort((a, b) => a.angkatan.localeCompare(b.angkatan) || a.dayNumber - b.dayNumber || a.startTime.localeCompare(b.startTime));
+340-  }, [schedules, searchTerm, filterType, selectedAngkatan, activeTraining]);
+341-
+342-  // Grouping
+343-  const groupedSchedules = useMemo(() => {
+344-    const groups: { key: string, angkatan: string, dayNumber: number, date: string, entries: ScheduleEntry[] }[] = [];
+345-    
+346-    filteredSchedules.forEach(s => {
+347-      const key = `${s.angkatan}|${s.dayNumber}|${s.date}`;
+348-      let group = groups.find(g => g.key === key);
+349-      if (!group) {
+350-        group = { key, angkatan: s.angkatan, dayNumber: s.dayNumber, date: s.date, entries: [] };
+351-        groups.push(group);
+352-      }
+353-      group.entries.push(s);
+354-    });
+355-    
+356-    return groups;
+357-  }, [filteredSchedules]);
+358-
+359-  // Calculate Date Range
+360-  const dateRangeStr = useMemo(() => {
+361-    if (filteredSchedules.length === 0) return '-';
+362-    const dates = filteredSchedules.map(s => parseISO(s.date)).sort((a, b) => a.getTime() - b.getTime());
+363-    const startDate = dates[0];
+364-    const endDate = dates[dates.length - 1];
+365-
+366-    if (startDate.getTime() === endDate.getTime()) {
+367-      return format(startDate, 'd MMMM yyyy', { locale: localeId });
+368-    }
+369-
+370-    const startMonth = format(startDate, 'MMMM', { locale: localeId });
+371-    const endMonth = format(endDate, 'MMMM', { locale: localeId });
+372-    const startYear = format(startDate, 'yyyy');
+373-    const endYear = format(endDate, 'yyyy');
+374-
+375-    if (startYear !== endYear) {
+376-      return `${format(startDate, 'd MMMM yyyy', { locale: localeId })} - ${format(endDate, 'd MMMM yyyy', { locale: localeId })}`;
+377-    } else if (startMonth !== endMonth) {
+378-      return `${format(startDate, 'd MMMM', { locale: localeId })} - ${format(endDate, 'd MMMM yyyy', { locale: localeId })}`;
+379-    } else {
+380-      return `${format(startDate, 'd')} - ${format(endDate, 'd MMMM yyyy', { locale: localeId })}`;
+381-    }
+382-  }, [filteredSchedules]);
+383-
+384-  // Preview Filtering & Grouping
+385-  const previewFilteredSchedules = useMemo(() => {
+386-    return schedules
+387-      .filter(s => {
+388-        const sTraining = s.trainingName || TRAINING_PROGRAMS[0];
+389-        if (sTraining !== activeTraining) return false;
+390-
+391-        const matchesAngkatan = previewAngkatan === 'All' || s.angkatan === previewAngkatan;
+--
+2695:        {viewingInstructor && (
+2696-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+2697-            <motion.div 
+2698-              initial={{ opacity: 0 }}
+2699-              animate={{ opacity: 1 }}
+2700-              exit={{ opacity: 0 }}
+2701-              onClick={() => setViewingInstructor(null)}
+2702-              className="absolute inset-0 bg-[#141414]/60 backdrop-blur-sm"
+2703-            />
+2704-            <motion.div 
+2705-              initial={{ opacity: 0, scale: 0.95 }}
+2706-              animate={{ opacity: 1, scale: 1 }}
+2707-              exit={{ opacity: 0, scale: 0.95 }}
+2708-              className="relative w-full max-w-2xl bg-[#E4E3E0] border border-[#141414] shadow-[16px_16px_0px_0px_rgba(20,20,20,1)] flex flex-col max-h-[90vh]"
+2709-            >
+2710-              <div className="bg-[#141414] text-[#E4E3E0] p-4 flex items-center justify-between shrink-0">
+2711-                <h3 className="font-bold uppercase tracking-widest text-sm">
+2712-                  Instructor Details
+2713-                </h3>
+2714-                <button onClick={() => setViewingInstructor(null)} className="hover:rotate-90 transition-transform">
+2715-                  <X size={20} />
+2716-                </button>
+2717-              </div>
+2718-              
+2719-              <div className="p-8 overflow-y-auto">
+2720-                <div className="flex items-center gap-6 mb-8">
+2721-                  <div className="w-20 h-20 bg-[#141414] text-[#E4E3E0] flex items-center justify-center text-4xl font-bold shrink-0">
+2722:                    {viewingInstructor.name.charAt(0)}
+2723-                  </div>
+2724-                  <div>
+2725-                    <div className="flex items-center gap-3">
+2726:                      <h2 className="text-2xl font-bold">{viewingInstructor.name}</h2>
+2727:                      {viewingInstructor.isExternal && <Badge variant="warning">Luar</Badge>}
+2728-                    </div>
+2729:                    <p className="font-mono uppercase tracking-widest opacity-90 mt-1">{viewingInstructor.role || 'Facilitator'}</p>
+2730:                    {viewingInstructor.email && (
+2731-                      <p className="text-sm mt-2 flex items-center gap-2">
+2732:                        <Mail size={14} /> {viewingInstructor.email}
+2733-                      </p>
+2734-                    )}
+2735-                  </div>
+2736-                </div>
+2737-
+2738:                {instructorJpStats[viewingInstructor.name] && (
+2739-                  <div className="space-y-4 mt-8">
+2740-                    <h4 className="font-bold uppercase tracking-widest border-b border-[#141414]/20 pb-2">Statistik Jam Pelajaran (JP)</h4>
+2741-                    <div className="bg-white border border-[#141414]/10 overflow-hidden">
+2742:                      {instructorJpStats[viewingInstructor.name].totalJp > 0 ? (
+2743-                        <table className="w-full text-left text-sm">
+2744-                          <thead className="bg-[#141414] text-[#E4E3E0] font-mono text-[10px] uppercase tracking-widest">
+2745-                            <tr>
+2746-                              <th className="p-3 font-normal">Program Pelatihan</th>
+2747-                              <th className="p-3 font-normal">Angkatan</th>
+2748-                              <th className="p-3 font-normal text-right">Total JP</th>
+2749-                              <th className="p-3 font-normal text-right">Total Jam</th>
+2750-                            </tr>
+2751-                          </thead>
+2752-                          <tbody className="divide-y divide-[#141414]/10">
+2753:                            {Object.entries(instructorJpStats[viewingInstructor.name].trainingJp).map(([training, angkatans]) => (
+2754-                              Object.entries(angkatans).map(([angkatan, jp], idx) => (
+2755-                                <tr key={`${training}-${angkatan}`} className="hover:bg-[#141414]/5 transition-colors">
+2756-                                  {idx === 0 ? (
+2757-                                    <td className="p-3 font-bold align-top" rowSpan={Object.keys(angkatans).length}>
+2758-                                      {training}
+2759-                                    </td>
+2760-                                  ) : null}
+2761-                                  <td className="p-3 font-mono text-xs">{angkatan}</td>
+2762-                                  <td className="p-3 font-bold text-right">{jp} JP</td>
+2763-                                  <td className="p-3 font-mono text-xs text-right opacity-90">{(Number(jp) * 45) / 60} Jam</td>
+2764-                                </tr>
+2765-                              ))
+2766-                            ))}
+2767-                          </tbody>
+2768-                          <tfoot className="bg-[#141414]/5 font-bold border-t-2 border-[#141414]">
+2769-                            <tr>
+2770-                              <td colSpan={2} className="p-3 text-right text-xs uppercase tracking-widest">Total Keseluruhan</td>
+2771:                              <td className="p-3 text-right text-lg">{instructorJpStats[viewingInstructor.name].totalJp} JP</td>
+2772:                              <td className="p-3 text-right font-mono text-xs opacity-90">{(instructorJpStats[viewingInstructor.name].totalJp * 45) / 60} Jam</td>
+2773-                            </tr>
+2774-                          </tfoot>
+2775-                        </table>
+2776-                      ) : (
+2777-                        <div className="p-8 text-center">
+2778-                          <p className="text-sm font-mono opacity-90 italic">Belum ada Jam Pelajaran (JP) yang tercatat untuk instruktur ini.</p>
+2779-                        </div>
+2780-                      )}
+2781-                    </div>
+2782-                  </div>
+2783-                )}
+2784-
+2785:                {!viewingInstructor.isExternal && (
+2786-                  <div className="space-y-4 mt-8">
+2787-                    <h4 className="font-bold uppercase tracking-widest border-b border-[#141414]/20 pb-2">Availability / Ketersediaan</h4>
+2788:                    {viewingInstructor.availability && viewingInstructor.availability.length > 0 ? (
+2789-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+2790:                        {viewingInstructor.availability
+2791-                          .sort((a, b) => (a.day === 0 ? 7 : a.day) - (b.day === 0 ? 7 : b.day)) // Sort by day Mon-Sun
+2792-                          .map((slot, idx) => (
+2793-                            <div key={idx} className="bg-white p-3 border border-[#141414]/10 flex items-center justify-between">
+2794-                              <span className="font-bold text-xs uppercase tracking-widest">
+2795-                                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][slot.day]}
+2796-                              </span>
+2797-                              <span className="font-mono text-xs opacity-90">
+2798-                                {slot.startTime} - {slot.endTime}
+2799-                              </span>
+2800-                            </div>
+2801-                          ))}
+2802-                      </div>
+2803-                    ) : (
+2804-                      <p className="text-sm font-mono opacity-90 italic">No availability information defined.</p>
+2805-                    )}
+2806-                  </div>
+2807-                )}
+2808-
+2809-                <div className="space-y-4 mt-8">
+2810-                  <h4 className="font-bold uppercase tracking-widest border-b border-[#141414]/20 pb-2">Assigned Schedules</h4>
+2811:                  {schedules.filter(s => s.instructors.includes(viewingInstructor.name)).length > 0 ? (
+2812-                    <div className="space-y-3">
+2813-                      {schedules
+2814:                        .filter(s => s.instructors.includes(viewingInstructor.name))
+2815-                        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime() || a.startTime.localeCompare(b.startTime))
+2816-                        .map(s => (
+2817-                          <div key={s.id} className="bg-white p-4 border border-[#141414] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+2818-                            <div>
+2819-                              <div className="flex items-center gap-2">
+2820-                                <p className="font-bold">{s.subject}</p>
+2821-                                {s.hasConflict && <AlertTriangle size={14} className="text-amber-500 animate-pulse" />}
+2822-                              </div>
+2823-                              <p className="text-xs font-mono opacity-90 mt-1">
+2824-                                {s.angkatan} • {format(parseISO(s.date), 'EEEE, dd MMM yyyy', { locale: localeId })}
+2825-                              </p>
+2826-                            </div>
+2827-                            <div className="text-left sm:text-right shrink-0">
+2828-                              <p className="font-mono text-sm">{s.startTime} - {s.endTime}</p>
+2829-                              <p className="text-[10px] uppercase tracking-widest opacity-90 mt-1">{s.type} • {s.jp} JP</p>
+2830-                            </div>
+2831-                          </div>
+2832-                        ))}
+2833-                    </div>
+2834-                  ) : (
+2835-                    <p className="text-sm font-mono opacity-90 italic">No schedules assigned to this instructor.</p>
+2836-                  )}
+2837-                </div>
+2838-
+2839:                {instructorConflictsMap[viewingInstructor.name] && (
+2840-                  <div className="space-y-4 mt-8">
+2841-                    <h4 className="font-bold uppercase tracking-widest border-b border-red-200 text-red-600 pb-2 flex items-center gap-2">
+2842-                      <AlertTriangle size={16} />
+2843-                      Schedule Conflicts / Bentrok Jadwal
+2844-                    </h4>
+2845-                    <div className="space-y-3">
+2846:                      {instructorConflictsMap[viewingInstructor.name].map((c, idx) => (
+2847-                        <div key={idx} className="bg-red-50 p-4 border border-red-200">
+2848-                          <p className="text-[10px] font-mono uppercase tracking-widest text-red-600 mb-2">Conflict #{idx + 1}</p>
+2849-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+2850-                            <div className="p-2 bg-white/50 border border-red-100">
+2851-                              <p className="text-[10px] font-bold uppercase opacity-90">Session A</p>
+2852-                              <p className="font-bold text-sm">{c.s1.subject}</p>
+2853-                              <p className="text-xs font-mono">{c.s1.angkatan}</p>
+2854-                              <p className="text-xs mt-1">{c.s1.startTime} - {c.s1.endTime}</p>
+2855-                            </div>
+2856-                            <div className="p-2 bg-white/50 border border-red-100">
+2857-                              <p className="text-[10px] font-bold uppercase opacity-90">Session B</p>
+2858-                              <p className="font-bold text-sm">{c.s2.subject}</p>
+2859-                              <p className="text-xs font-mono">{c.s2.angkatan}</p>
+2860-                              <p className="text-xs mt-1">{c.s2.startTime} - {c.s2.endTime}</p>
+2861-                            </div>
+2862-                          </div>
+2863-                          <p className="text-[10px] mt-2 text-red-600 font-mono italic">
+2864-                            Date: {format(parseISO(c.s1.date), 'EEEE, dd MMMM yyyy', { locale: localeId })}
+2865-                          </p>
+2866-                        </div>
+2867-                      ))}
+2868-                    </div>
+2869-                  </div>
+2870-                )}
+2871-              </div>
+2872-            </motion.div>
+2873-          </div>
+2874-        )}
+2875-      </AnimatePresence>
+2876-    </div>
+2877-  );
+2878-}

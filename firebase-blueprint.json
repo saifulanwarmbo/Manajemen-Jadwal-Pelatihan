@@ -1,0 +1,67 @@
+{
+  "entities": {
+    "ScheduleEntry": {
+      "title": "Schedule Entry",
+      "description": "A single entry in the training schedule.",
+      "type": "object",
+      "properties": {
+        "dayNumber": { "type": "integer", "description": "Day number of the training." },
+        "date": { "type": "string", "format": "date", "description": "Date of the session." },
+        "startTime": { "type": "string", "description": "Start time (HH:mm)." },
+        "endTime": { "type": "string", "description": "End time (HH:mm)." },
+        "subject": { "type": "string", "description": "Subject or activity name." },
+        "jp": { "type": "integer", "description": "Jam Pelajaran (Lesson Hours)." },
+        "instructors": { 
+          "type": "array", 
+          "items": { "type": "string" },
+          "description": "List of instructor names." 
+        },
+        "type": { 
+          "type": "string", 
+          "enum": ["Synchronous", "Asynchronous", "Ceramah", "Dinamika Kelompok", "Lainnya"],
+          "description": "Type of the session." 
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["dayNumber", "date", "startTime", "endTime", "subject", "jp", "type"]
+    },
+    "Instructor": {
+      "title": "Instructor",
+      "description": "A facilitator or instructor.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "email": { "type": "string", "format": "email" }
+      },
+      "required": ["name"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Application user profile.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] }
+      },
+      "required": ["uid", "email", "role"]
+    }
+  },
+  "firestore": {
+    "/schedules/{scheduleId}": {
+      "schema": "ScheduleEntry",
+      "description": "Collection of schedule entries."
+    },
+    "/instructors/{instructorId}": {
+      "schema": "Instructor",
+      "description": "Collection of instructors."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles and roles."
+    }
+  }
+}
