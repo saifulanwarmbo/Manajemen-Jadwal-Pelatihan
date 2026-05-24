@@ -1061,9 +1061,12 @@ export default function App() {
     <div className="min-h-screen bg-[#F0F4F8] flex text-slate-900 font-sans">
       {/* Sidebar */}
       <aside className="w-64 bg-slate-50 border-r border-slate-200 flex flex-col sticky top-0 h-screen z-10 px-4 py-4 gap-2">
-        <div className="p-6 border-b border-slate-200">
-          <h2 className="text-xl font-bold tracking-tight leading-none font-serif">MANAJEMEN</h2>
-          <h2 className="text-xl font-bold tracking-tight leading-none font-serif">JADWAL PELATIHAN</h2>
+        <div className="p-6 border-b border-slate-200 flex flex-col items-center justify-center gap-3">
+          <img src="/favicon.png" alt="SIPP Logo" className="w-16 h-16 object-contain" referrerPolicy="no-referrer" />
+          <div className="text-center">
+            <h2 className="text-lg font-bold tracking-tight leading-none font-serif">MANAJEMEN</h2>
+            <h2 className="text-lg font-bold tracking-tight leading-none font-serif text-indigo-600">JADWAL PELATIHAN</h2>
+          </div>
         </div>
         
         <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
