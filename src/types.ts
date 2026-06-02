@@ -21,12 +21,24 @@ export interface DayAvailability {
   endTime: string;
 }
 
+export interface TrainingProgram {
+  id?: string;
+  title: string;
+  description: string;
+  objective: string;
+  targetAudience: string;
+  type?: 'Struktural' | 'Teknis' | 'Fungsional' | 'Lainnya';
+  createdAt?: any;
+  updatedAt?: any;
+}
+
 export interface Instructor {
   id?: string;
   name: string;
   role?: string;
   email?: string;
   availability?: DayAvailability[];
+  isExternal?: boolean;
 }
 
 export interface UserProfile {

@@ -15,7 +15,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import { Auth } from './components/Auth';
-import { ScheduleEntry, Instructor, UserProfile, DayAvailability } from './types';
+import { ScheduleEntry, Instructor, UserProfile, DayAvailability, TrainingProgram } from './types';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -38,7 +38,8 @@ import {
   AlertTriangle,
   Copy,
   Shield,
-  FileText
+  FileText,
+  Upload
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -77,7 +78,7 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }: { icon: any, label:
   </button>
 );
 
-const Badge = ({ children, variant = 'default' }: { children: React.ReactNode, variant?: 'default' | 'success' | 'warning' | 'info' }) => {
+const Badge = ({ children, variant = 'default', className }: { children: React.ReactNode, variant?: 'default' | 'success' | 'warning' | 'info', className?: string }) => {
   const variants = {
     default: "bg-slate-100 text-slate-900",
     success: "bg-green-100 text-green-800",
@@ -85,7 +86,7 @@ const Badge = ({ children, variant = 'default' }: { children: React.ReactNode, v
     info: "bg-blue-100 text-blue-800",
   };
   return (
-    <span className={cn("px-2 py-0.5 text-xs font-mono uppercase tracking-tighter font-bold rounded", variants[variant])}>
+    <span className={cn("px-2 py-0.5 text-xs font-mono uppercase tracking-tighter font-bold rounded", variants[variant], className)}>
       {children}
     </span>
   );
@@ -141,6 +142,7 @@ export default function App() {
   
   const [schedules, setSchedules] = useState<ScheduleEntry[]>([]);
   const [instructors, setInstructors] = useState<Instructor[]>([]);
+  const [programs, setPrograms] = useState<TrainingProgram[]>([]);
   const [usersList, setUsersList] = useState<UserProfile[]>([]);
   
   const [selectedInstructorForCalendar, setSelectedInstructorForCalendar] = useState<Instructor | null>(null);
@@ -155,6 +157,16 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<ScheduleEntry | null>(null);
   const [scheduleFormError, setScheduleFormError] = useState<string | null>(null);
+
+  // Program Management State
+  const [isProgramModalOpen, setIsProgramModalOpen] = useState(false);
+  const [editingProgram, setEditingProgram] = useState<TrainingProgram | null>(null);
+  const [programTitle, setProgramTitle] = useState('');
+  const [programDescription, setProgramDescription] = useState('');
+  const [programObjective, setProgramObjective] = useState('');
+  const [programTargetAudience, setProgramTargetAudience] = useState('');
+  const [programType, setProgramType] = useState<TrainingProgram['type']>('Lainnya');
+  const [programFormError, setProgramFormError] = useState<string | null>(null);
   const [instructorSearch, setInstructorSearch] = useState('');
   const deferredInstructorSearch = useDeferredValue(instructorSearch);
   const [currentScheduleDate, setCurrentScheduleDate] = useState('');
@@ -232,12 +244,19 @@ export default function App() {
   const [reminderMessage, setReminderMessage] = useState("This is a reminder for your upcoming session.");
   const [isSendingReminders, setIsSendingReminders] = useState(false);
   const [reminderResult, setReminderResult] = useState<{success: number, failed: number} | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<{type: 'schedule' | 'instructor' | 'user', id: string, label: string} | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{type: 'schedule' | 'instructor' | 'user' | 'program', id: string, label: string} | null>(null);
 
   // Duplicate Batch State
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
   const [duplicateSourceAngkatan, setDuplicateSourceAngkatan] = useState('');
   const [duplicateTargetAngkatan, setDuplicateTargetAngkatan] = useState('');
+
+  // Import State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importTargetAngkatan, setImportTargetAngkatan] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
   const [duplicateDateOffset, setDuplicateDateOffset] = useState<number>(0);
 
   // Delete Batch State
@@ -334,9 +353,15 @@ export default function App() {
       setInstructors(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Instructor)));
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'instructors'));
 
+    const qPrograms = query(collection(db, 'programs'), orderBy('title', 'asc'));
+    const unsubPrograms = onSnapshot(qPrograms, (snapshot) => {
+      setPrograms(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TrainingProgram)));
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'programs'));
+
     return () => {
       unsubSchedules();
       unsubInstructors();
+      unsubPrograms();
     };
   }, []);
 
@@ -357,6 +382,31 @@ export default function App() {
     const angkatans = Array.from(new Set(schedules.map(s => s.angkatan).filter(Boolean)));
     return angkatans.sort();
   }, [schedules]);
+
+  const currentProgramsList = useMemo(() => {
+    const defaultPrograms = PROGRAM_DETAILS.map(p => ({
+      id: p.id,
+      title: p.title,
+      description: p.description,
+      objective: p.objective,
+      targetAudience: p.targetAudience,
+      type: 'Struktural' as const
+    }));
+
+    const merged = [...defaultPrograms];
+    programs.forEach(fp => {
+      const existingIdx = merged.findIndex(dp => dp.id === fp.id);
+      if (existingIdx >= 0) {
+        merged[existingIdx] = fp;
+      } else {
+        merged.push(fp);
+      }
+    });
+
+    return merged;
+  }, [programs]);
+
+  const trainingProgramTitles = useMemo(() => currentProgramsList.map(p => p.title), [currentProgramsList]);
 
   // Filtering
   const filteredSchedules = useMemo(() => {
@@ -546,6 +596,37 @@ export default function App() {
   }, [schedules, allInstructors]);
 
   // Auth & Profile
+  // --- Program CRUD ---
+  const handleSaveProgram = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!isAdmin) return;
+    setProgramFormError(null);
+
+    const data: TrainingProgram = {
+      title: programTitle,
+      description: programDescription,
+      objective: programObjective,
+      targetAudience: programTargetAudience,
+      type: programType
+    };
+
+    try {
+      if (editingProgram?.id) {
+        data.updatedAt = new Date().toISOString();
+        await setDoc(doc(db, 'programs', editingProgram.id), data as any, { merge: true });
+      } else {
+        data.createdAt = new Date().toISOString();
+        data.updatedAt = new Date().toISOString();
+        await addDoc(collection(db, 'programs'), data);
+      }
+      setIsProgramModalOpen(false);
+      setEditingProgram(null);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'programs');
+      setProgramFormError('Gagal menyimpan program. Periksa koneksi dan izin.');
+    }
+  };
+
   const handleSaveSchedule = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isAdmin) return;
@@ -645,6 +726,8 @@ export default function App() {
     try {
       if (deleteConfirm.type === 'schedule') {
         await deleteDoc(doc(db, 'schedules', deleteConfirm.id));
+      } else if (deleteConfirm.type === 'program') {
+        await deleteDoc(doc(db, 'programs', deleteConfirm.id));
       } else if (deleteConfirm.type === 'instructor') {
         if (deleteConfirm.id.startsWith('ext-')) {
           const instructorName = deleteConfirm.label;
@@ -661,7 +744,9 @@ export default function App() {
       }
       setDeleteConfirm(null);
     } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, deleteConfirm.type === 'schedule' ? 'schedules' : (deleteConfirm.type === 'instructor' ? 'instructors' : 'users'));
+      handleFirestoreError(err, OperationType.DELETE, deleteConfirm.type === 'schedule' ? 'schedules' : 
+        (deleteConfirm.type === 'instructor' ? 'instructors' : 
+        (deleteConfirm.type === 'program' ? 'programs' : 'users')));
     }
   };
 
@@ -721,6 +806,67 @@ export default function App() {
       setEditingAvailability([]);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'instructors');
+    }
+  };
+
+  const handleImportSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!isAdmin || !importFile || !importTargetAngkatan) return;
+
+    setIsImporting(true);
+    setImportError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      formData.append('trainingName', activeTraining);
+      formData.append('angkatan', importTargetAngkatan);
+
+      const res = await fetch('/api/extract-schedule', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to extract schedule');
+
+      const extractedSchedules = data.schedules as ScheduleEntry[];
+      if (!extractedSchedules || extractedSchedules.length === 0) {
+        throw new Error('No schedule entries found in the file.');
+      }
+
+      // Filter out those already exist to prevent dupes in the same training and angkatan
+      // Match by subject, date, startTime, and endTime
+      const existingInTarget = schedules.filter(s => 
+        (s.trainingName || trainingProgramTitles[0] || 'Lainnya') === activeTraining && 
+        s.angkatan === importTargetAngkatan
+      );
+
+      const newSchedules = extractedSchedules.filter(extracted => {
+        return !existingInTarget.some(existing => 
+          existing.date === extracted.date &&
+          existing.startTime === extracted.startTime &&
+          existing.endTime === extracted.endTime &&
+          existing.subject === extracted.subject
+        );
+      });
+
+      if (newSchedules.length > 0) {
+        await Promise.all(newSchedules.map(async s => {
+          s.createdAt = new Date().toISOString();
+          s.updatedAt = new Date().toISOString();
+          await addDoc(collection(db, 'schedules'), s);
+        }));
+      }
+
+      setIsImportModalOpen(false);
+      setImportFile(null);
+      setImportTargetAngkatan('');
+    } catch (err: any) {
+      console.error(err);
+      setImportError(err.message || 'An error occurred during import.');
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -1076,7 +1222,7 @@ export default function App() {
             onChange={(e) => setActiveTraining(e.target.value)}
             className="w-full p-2 text-xs font-bold border border-slate-200/20 bg-white focus:outline-none focus:border-slate-200"
           >
-            {TRAINING_PROGRAMS.map(t => <option key={t} value={t}>{t}</option>)}
+            {trainingProgramTitles.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
 
@@ -1198,13 +1344,24 @@ export default function App() {
                 </button>
                 <button 
                   onClick={() => setIsDeleteBatchModalOpen(true)}
-                  className="flex items-center gap-2 bg-white text-red-600 border border-red-600 px-4 py-2 text-sm font-medium rounded-full tracking-wide font-sans hover:bg-red-50 transition-all"
+                  className="flex items-center gap-2 bg-white text-red-600 border border-red-600 shadow-sm px-4 py-2 text-sm font-medium rounded-full tracking-wide font-sans hover:bg-red-50 transition-all cursor-pointer"
                 >
                   <Trash2 size={14} />
                   Delete Batch
                 </button>
               </>
             )}
+            
+            {isAdmin && activeView === 'schedule' && (
+              <button 
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex items-center gap-2 bg-emerald-600 text-white shadow-sm px-4 py-2 text-sm font-medium rounded-full tracking-wide font-sans hover:bg-emerald-700 transition-all cursor-pointer"
+              >
+                <Upload size={14} />
+                Import PDF/Image
+              </button>
+            )}
+
             {isAdmin && (activeView === 'schedule' || activeView === 'instructors') && (
               <button 
                 onClick={() => {
@@ -1298,23 +1455,75 @@ export default function App() {
                 exit={{ opacity: 0, y: -10 }}
                 className="space-y-6"
               >
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
                   <div>
                     <h2 className="text-3xl font-serif tracking-tight mb-2">Training Programs</h2>
                     <p className="text-slate-500 font-mono text-xs max-w-2xl bg-white/50 inline-block px-2">
                       // INFORMATION AND DETAILS ABOUT AVAILABLE PROGRAMS //
                     </p>
                   </div>
+                  {isAdmin && (
+                    <button 
+                      onClick={() => {
+                        setEditingProgram(null);
+                        setProgramTitle('');
+                        setProgramDescription('');
+                        setProgramObjective('');
+                        setProgramTargetAudience('');
+                        setProgramType('Lainnya');
+                        setIsProgramModalOpen(true);
+                      }}
+                      className="bg-[#0F172A] text-white px-5 py-2.5 rounded hover:bg-slate-800 transition-colors flex items-center font-bold text-xs"
+                    >
+                      <Plus size={16} className="mr-2" />
+                      Add Program
+                    </button>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full max-w-full">
-                  {PROGRAM_DETAILS.map((program) => (
-                    <div key={program.id} className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+                  {currentProgramsList.map((program) => (
+                    <div key={program.id} className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow relative group/program">
+                      {isAdmin && (
+                        <div className="absolute top-4 right-4 z-20 flex items-center gap-2 opacity-0 group-hover/program:opacity-100 transition-opacity bg-white/10 backdrop-blur-sm p-1 rounded-lg">
+                          <button 
+                            onClick={() => {
+                              setEditingProgram(program);
+                              setProgramTitle(program.title);
+                              setProgramDescription(program.description);
+                              setProgramObjective(program.objective);
+                              setProgramTargetAudience(program.targetAudience);
+                              setProgramType(program.type || 'Lainnya');
+                              setIsProgramModalOpen(true);
+                            }}
+                            className="p-2 bg-white/90 text-slate-800 rounded hover:bg-white transition-colors shadow-sm"
+                            title="Edit"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (program.id) {
+                                setDeleteConfirm({ type: 'program', id: program.id, label: program.title });
+                              }
+                            }}
+                            className="p-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors shadow-sm"
+                            title="Delete"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      )}
                       <div className="bg-slate-900 text-white shadow-sm p-6 relative overflow-hidden">
                         <div className="absolute -right-4 -bottom-4 opacity-5">
                           <BookOpen size={120} />
                         </div>
                         <h3 className="text-xl font-serif font-bold relative z-10 pr-12">{program.title}</h3>
+                        {program.type && (
+                          <Badge variant="info" className="relative z-10 mt-2 bg-white/20 text-white border-white/20">
+                            {program.type}
+                          </Badge>
+                        )}
                       </div>
                       
                       <div className="p-8 flex-1 flex flex-col gap-6">
@@ -1522,9 +1731,11 @@ export default function App() {
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
               >
                 {allInstructors.map((inst) => (
-                  <div 
+                  <motion.div 
                     key={inst.id} 
-                    className="bg-white border border-slate-200  p-6 shadow-md rounded-2xl border-slate-200 group relative cursor-pointer hover:bg-slate-50 transition-colors"
+                    whileHover={{ y: -4 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className="bg-white border border-slate-200 p-6 shadow-md rounded-2xl group relative cursor-pointer hover:bg-slate-50 hover:shadow-lg transition-colors"
                     onClick={() => setViewingInstructor(inst)}
                   >
                     <div className="flex items-start justify-between mb-4">
@@ -1638,7 +1849,7 @@ export default function App() {
                         Download Portfolio {new Date().getFullYear()}
                       </button>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
                 {allInstructors.length === 0 && (
                   <div className="col-span-full py-24 text-center">
@@ -2209,6 +2420,137 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* Program Modal */}
+      <AnimatePresence>
+        {isProgramModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsProgramModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white border text-left border-slate-200 shadow-2xl relative z-10 w-full max-w-2xl max-h-[90vh] flex flex-col font-sans"
+            >
+              <div className="flex justify-between items-center p-6 border-b border-slate-200 bg-slate-50">
+                <div>
+                  <h3 className="text-xl font-serif font-bold text-slate-900">
+                    {editingProgram ? 'Edit Program' : 'Add New Program'}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono mt-1 uppercase tracking-wider">
+                    {editingProgram ? 'Update program details' : 'Create a new training program entry'}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setIsProgramModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-2 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveProgram} className="flex flex-col overflow-hidden">
+                <div className="p-6 overflow-y-auto space-y-6">
+                  {programFormError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm font-medium flex items-start gap-2">
+                      <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+                      {programFormError}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="col-span-full">
+                      <label className="block text-xs font-bold text-slate-700 tracking-wide mb-2 uppercase">Program Title</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={programTitle}
+                        onChange={(e) => setProgramTitle(e.target.value)}
+                        placeholder="e.g. Pelatihan Teknis Perkantoran"
+                        className="w-full p-3 text-sm border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
+                      />
+                    </div>
+
+                    <div className="col-span-full">
+                      <label className="block text-xs font-bold text-slate-700 tracking-wide mb-2 uppercase">Program Type</label>
+                      <select 
+                        required
+                        value={programType}
+                        onChange={(e) => setProgramType(e.target.value as any)}
+                        className="w-full p-3 text-sm border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
+                      >
+                        <option value="Struktural">Struktural</option>
+                        <option value="Teknis">Teknis</option>
+                        <option value="Fungsional">Fungsional</option>
+                        <option value="Lainnya">Lainnya</option>
+                      </select>
+                    </div>
+
+                    <div className="col-span-full">
+                      <label className="block text-xs font-bold text-slate-700 tracking-wide mb-2 uppercase">Description</label>
+                      <textarea 
+                        required
+                        rows={3}
+                        value={programDescription}
+                        onChange={(e) => setProgramDescription(e.target.value)}
+                        placeholder="Description of the program..."
+                        className="w-full p-3 text-sm border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      />
+                    </div>
+
+                    <div className="col-span-full">
+                      <label className="block text-xs font-bold text-slate-700 tracking-wide mb-2 uppercase">Objective</label>
+                      <textarea 
+                        required
+                        rows={2}
+                        value={programObjective}
+                        onChange={(e) => setProgramObjective(e.target.value)}
+                        placeholder="Main objective of the program..."
+                        className="w-full p-3 text-sm border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      />
+                    </div>
+                    
+                    <div className="col-span-full">
+                      <label className="block text-xs font-bold text-slate-700 tracking-wide mb-2 uppercase">Target Audience</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={programTargetAudience}
+                        onChange={(e) => setProgramTargetAudience(e.target.value)}
+                        placeholder="e.g. All employees, PNS, CPNS..."
+                        className="w-full p-3 text-sm border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-6 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 mt-auto">
+                  <button 
+                    type="button" 
+                    onClick={() => setIsProgramModalOpen(false)}
+                    className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="px-5 py-2.5 text-sm font-bold bg-[#0F172A] text-white hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 min-w-[120px]"
+                  >
+                    <Save size={16} />
+                    {editingProgram ? 'Save Changes' : 'Create Program'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Instructor Modal */}
       <AnimatePresence>
         {isInstructorModalOpen && (
@@ -2568,6 +2910,110 @@ export default function App() {
                   >
                     <Copy size={14} />
                     Duplicate
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Import Schedule Modal */}
+      <AnimatePresence>
+        {isImportModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsImportModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-white border text-left border-slate-200 shadow-2xl relative z-10 w-full max-w-md max-h-[90vh] flex flex-col font-sans"
+            >
+              <div className="flex justify-between items-center p-6 border-b border-slate-200 bg-slate-50">
+                <div>
+                  <h3 className="text-xl font-serif font-bold text-slate-900 flex items-center gap-2">
+                    <Upload size={20} />
+                    Import PDF/Image
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono mt-1 uppercase tracking-wider">
+                    Powered by AI Studio
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setIsImportModalOpen(false)}
+                  disabled={isImporting}
+                  className="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-2 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <form onSubmit={handleImportSubmit} className="flex flex-col overflow-hidden">
+                <div className="p-8 space-y-6 overflow-y-auto">
+                  {importError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm font-medium flex items-start gap-2">
+                      <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+                      {importError}
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <label className="text-xs tracking-wide font-sans font-medium opacity-90 block">Select PDF or Image file</label>
+                    <input 
+                      type="file" 
+                      accept="image/*,application/pdf"
+                      onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                      className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs tracking-wide font-sans font-medium opacity-90 block">Target Angkatan / Batch</label>
+                    <input 
+                      type="text" 
+                      value={importTargetAngkatan}
+                      onChange={(e) => setImportTargetAngkatan(e.target.value)}
+                      placeholder="e.g. Angkatan XVII"
+                      className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                      required
+                    />
+                    <p className="text-[10px] text-slate-500 font-mono">
+                      // Existing items in this batch won't be overwritten.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="p-6 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 mt-auto">
+                  <button 
+                    type="button" 
+                    disabled={isImporting}
+                    onClick={() => setIsImportModalOpen(false)}
+                    className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={isImporting || !importFile || !importTargetAngkatan}
+                    className="px-5 py-2.5 text-sm font-bold flex items-center justify-center gap-2 bg-[#0F172A] text-white hover:bg-slate-800 transition-colors disabled:opacity-50 min-w-[120px]"
+                  >
+                    {isImporting ? (
+                      <span className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-[#F8FAFC] border-t-transparent rounded-full animate-spin" />
+                        Extracting...
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <Upload size={16} /> Start Import
+                      </span>
+                    )}
                   </button>
                 </div>
               </form>
