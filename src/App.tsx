@@ -39,7 +39,9 @@ import {
   Copy,
   Shield,
   FileText,
-  Upload
+  Upload,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -70,7 +72,7 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }: { icon: any, label:
       "w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all border-l-4",
       active 
         ? "bg-indigo-600 text-white shadow-sm rounded-2xl" 
-        : "text-slate-500 border-transparent hover:bg-slate-50 hover:text-slate-900"
+        : "text-slate-500 dark:text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100"
     )}
   >
     <Icon size={18} />
@@ -80,10 +82,10 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }: { icon: any, label:
 
 const Badge = ({ children, variant = 'default', className }: { children: React.ReactNode, variant?: 'default' | 'success' | 'warning' | 'info', className?: string }) => {
   const variants = {
-    default: "bg-slate-100 text-slate-900",
-    success: "bg-green-100 text-green-800",
-    warning: "bg-yellow-100 text-yellow-800",
-    info: "bg-blue-100 text-blue-800",
+    default: "bg-slate-100 text-slate-900 dark:text-slate-100 dark:bg-slate-700/50 dark:text-slate-300",
+    success: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+    warning: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+    info: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
   };
   return (
     <span className={cn("px-2 py-0.5 text-xs font-mono uppercase tracking-tighter font-bold rounded", variants[variant], className)}>
@@ -133,6 +135,24 @@ const PROGRAM_DETAILS = [
 // --- Main App ---
 
 export default function App() {
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('darkMode') === 'true' || 
+             (!('darkMode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('darkMode', 'true');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('darkMode', 'false');
+    }
+  }, [isDarkMode]);
+
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -863,7 +883,6 @@ export default function App() {
       setImportFile(null);
       setImportTargetAngkatan('');
     } catch (err: any) {
-      console.error(err);
       setImportError(err.message || 'An error occurred during import.');
     } finally {
       setIsImporting(false);
@@ -1204,10 +1223,10 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F0F4F8] flex text-slate-900 font-sans">
+    <div className="min-h-screen bg-[#F0F4F8] dark:bg-slate-900 flex text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200">
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-50 border-r border-slate-200 flex flex-col sticky top-0 h-screen z-10 px-4 py-4 gap-2">
-        <div className="p-6 border-b border-slate-200 flex flex-col items-center justify-center gap-3">
+      <aside className="w-64 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col sticky top-0 h-screen z-10 px-4 py-4 gap-2 transition-colors duration-200">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center gap-3">
           <img src="/favicon.png" alt="SIPP Logo" className="w-16 h-16 object-contain" referrerPolicy="no-referrer" />
           <div className="text-center">
             <h2 className="text-lg font-bold tracking-tight leading-none font-serif">MANAJEMEN</h2>
@@ -1215,12 +1234,12 @@ export default function App() {
           </div>
         </div>
         
-        <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800 transition-colors duration-200">
           <label className="block text-[10px] font-bold tracking-wide font-sans mb-2 opacity-90">Program Pelatihan</label>
           <select 
             value={activeTraining}
             onChange={(e) => setActiveTraining(e.target.value)}
-            className="w-full p-2 text-xs font-bold border border-slate-200/20 bg-white focus:outline-none focus:border-slate-200"
+            className="w-full p-2 text-xs font-bold border border-slate-200/20 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none focus:border-slate-200 dark:border-slate-700 dark:focus:border-slate-500 transition-colors duration-200"
           >
             {trainingProgramTitles.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
@@ -1269,7 +1288,7 @@ export default function App() {
           )}
         </nav>
 
-        <div className="p-4 border-t border-slate-200/10">
+        <div className="p-4 border-t border-slate-200/10 dark:border-slate-700">
           {user ? (
             <>
               <div className="flex items-center gap-3 mb-4 px-2">
@@ -1292,7 +1311,7 @@ export default function App() {
           ) : (
             <button 
               onClick={() => setActiveView('login')}
-              className="w-full border border-slate-200 text-slate-900 flex items-center justify-center gap-2 px-2 py-3 text-sm font-medium rounded-xl tracking-wide font-sans hover:bg-slate-900 hover:text-white transition-colors"
+              className="w-full border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 flex items-center justify-center gap-2 px-2 py-3 text-sm font-medium rounded-xl tracking-wide font-sans hover:bg-slate-900 hover:text-white dark:hover:bg-slate-700 transition-colors"
             >
               Login Admin
             </button>
@@ -1303,14 +1322,21 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="h-24 bg-slate-50/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-10">
+        <header className="h-24 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-10 transition-colors duration-200">
           <div className="flex items-center gap-2 text-sm font-mono opacity-90 tracking-wide font-sans">
-            <span>System</span>
-            <ChevronRight size={14} />
-            <span className="text-slate-900 opacity-100 font-bold">{activeView}</span>
+            <span className="dark:text-slate-400">System</span>
+            <ChevronRight size={14} className="dark:text-slate-400" />
+            <span className="text-slate-900 dark:text-slate-100 opacity-100 font-bold">{activeView}</span>
           </div>
           
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDarkMode ? <Sun size={18} className="text-yellow-500" /> : <Moon size={18} className="text-slate-600 dark:text-slate-300" />}
+            </button>
             {isAdmin && activeView === 'schedule' && (
               <button 
                 onClick={() => {
@@ -1330,21 +1356,21 @@ export default function App() {
                     setReminderResult(null);
                     setIsReminderModalOpen(true);
                   }}
-                  className="flex items-center gap-2 bg-white text-slate-900 border border-slate-200 rounded-full shadow-sm px-4 py-2 text-sm font-medium rounded-full tracking-wide font-sans hover:bg-slate-50 transition-all"
+                  className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-full shadow-sm px-4 py-2 text-sm font-medium rounded-full tracking-wide font-sans hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-all"
                 >
                   <Mail size={14} />
                   Send Reminders
                 </button>
                 <button 
                   onClick={() => setIsDuplicateModalOpen(true)}
-                  className="flex items-center gap-2 bg-white text-slate-900 border border-slate-200 rounded-full shadow-sm px-4 py-2 text-sm font-medium rounded-full tracking-wide font-sans hover:bg-slate-50 transition-all"
+                  className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-full shadow-sm px-4 py-2 text-sm font-medium rounded-full tracking-wide font-sans hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-all"
                 >
                   <Copy size={14} />
                   Duplicate Batch
                 </button>
                 <button 
                   onClick={() => setIsDeleteBatchModalOpen(true)}
-                  className="flex items-center gap-2 bg-white text-red-600 border border-red-600 shadow-sm px-4 py-2 text-sm font-medium rounded-full tracking-wide font-sans hover:bg-red-50 transition-all cursor-pointer"
+                  className="flex items-center gap-2 bg-white dark:bg-slate-800 text-red-600 border border-red-600 shadow-sm px-4 py-2 text-sm font-medium rounded-full tracking-wide font-sans hover:bg-red-50 transition-all cursor-pointer"
                 >
                   <Trash2 size={14} />
                   Delete Batch
@@ -1399,26 +1425,26 @@ export default function App() {
                 exit={{ opacity: 0, y: -10 }}
                 className="grid grid-cols-1 md:grid-cols-3 gap-6"
               >
-                <div className="bg-white border border-slate-200  p-6 shadow-md rounded-2xl border-slate-200">
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700  p-6 shadow-md rounded-2xl border-slate-200 dark:border-slate-700">
                   <p className="text-xs tracking-wide font-sans font-medium opacity-90 mb-1">Total Sessions</p>
                   <p className="text-4xl font-bold tracking-tighter">{schedules.length}</p>
                 </div>
-                <div className="bg-white border border-slate-200  p-6 shadow-md rounded-2xl border-slate-200">
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700  p-6 shadow-md rounded-2xl border-slate-200 dark:border-slate-700">
                   <p className="text-xs tracking-wide font-sans font-medium opacity-90 mb-1">Total Instructors</p>
                   <p className="text-4xl font-bold tracking-tighter">{instructors.length}</p>
                 </div>
-                <div className="bg-white border border-slate-200  p-6 shadow-md rounded-2xl border-slate-200">
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700  p-6 shadow-md rounded-2xl border-slate-200 dark:border-slate-700">
                   <p className="text-xs tracking-wide font-sans font-medium opacity-90 mb-1">Total JP</p>
                   <p className="text-4xl font-bold tracking-tighter">
                     {schedules.reduce((acc, curr) => acc + curr.jp, 0)}
                   </p>
                 </div>
 
-                <div className="md:col-span-3 bg-white border border-slate-200 rounded-xl shadow-sm p-8 mt-4">
+                <div className="md:col-span-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-8 mt-4">
                   <h3 className="text-lg font-bold uppercase tracking-tight mb-6 border-b border-slate-200/10 pb-4">Upcoming Sessions</h3>
                   <div className="space-y-4">
                     {schedules.filter(s => parseISO(s.date) >= new Date() && s.type !== 'Istirahat').slice(0, 5).map(s => (
-                      <div key={s.id} className="flex items-center justify-between p-4 border border-slate-200/5 hover:bg-slate-50 transition-colors">
+                      <div key={s.id} className="flex items-center justify-between p-4 border border-slate-200/5 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-colors">
                         <div className="flex items-center gap-6">
                           <div className="text-center min-w-[60px]">
                             <p className="text-xs font-mono opacity-90 uppercase">{format(parseISO(s.date), 'MMM')}</p>
@@ -1458,7 +1484,7 @@ export default function App() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
                   <div>
                     <h2 className="text-3xl font-serif tracking-tight mb-2">Training Programs</h2>
-                    <p className="text-slate-500 font-mono text-xs max-w-2xl bg-white/50 inline-block px-2">
+                    <p className="text-slate-500 dark:text-slate-400 font-mono text-xs max-w-2xl bg-white/50 inline-block px-2">
                       // INFORMATION AND DETAILS ABOUT AVAILABLE PROGRAMS //
                     </p>
                   </div>
@@ -1483,7 +1509,7 @@ export default function App() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full max-w-full">
                   {currentProgramsList.map((program) => (
-                    <div key={program.id} className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow relative group/program">
+                    <div key={program.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-shadow relative group/program">
                       {isAdmin && (
                         <div className="absolute top-4 right-4 z-20 flex items-center gap-2 opacity-0 group-hover/program:opacity-100 transition-opacity bg-white/10 backdrop-blur-sm p-1 rounded-lg">
                           <button 
@@ -1496,7 +1522,7 @@ export default function App() {
                               setProgramType(program.type || 'Lainnya');
                               setIsProgramModalOpen(true);
                             }}
-                            className="p-2 bg-white/90 text-slate-800 rounded hover:bg-white transition-colors shadow-sm"
+                            className="p-2 bg-white/90 text-slate-800 dark:text-slate-200 rounded hover:bg-white dark:bg-slate-800 transition-colors shadow-sm"
                             title="Edit"
                           >
                             <Edit2 size={14} />
@@ -1528,21 +1554,21 @@ export default function App() {
                       
                       <div className="p-8 flex-1 flex flex-col gap-6">
                         <div>
-                          <h4 className="text-xs font-bold font-mono text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <h4 className="text-xs font-bold font-mono text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                             <FileText size={14} /> Description
                           </h4>
                           <p className="text-sm text-slate-700 leading-relaxed font-sans">{program.description}</p>
                         </div>
                         
                         <div>
-                          <h4 className="text-xs font-bold font-mono text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <h4 className="text-xs font-bold font-mono text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                             <Shield size={14} /> Objective
                           </h4>
                           <p className="text-sm text-slate-700 leading-relaxed font-sans">{program.objective}</p>
                         </div>
 
                         <div className="mt-auto">
-                          <h4 className="text-xs font-bold font-mono text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <h4 className="text-xs font-bold font-mono text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                             <Users size={14} /> Target Audience
                           </h4>
                           <p className="text-sm text-slate-700 leading-relaxed font-sans">{program.targetAudience}</p>
@@ -1568,7 +1594,7 @@ export default function App() {
                     <input 
                       type="text" 
                       placeholder="Search by subject or instructor..."
-                      className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/10"
+                      className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/10"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -1576,7 +1602,7 @@ export default function App() {
                   <div className="w-48 relative">
                     <Filter className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30" size={16} />
                     <select 
-                      className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm appearance-none focus:outline-none"
+                      className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm appearance-none focus:outline-none"
                       value={filterType}
                       onChange={(e) => setFilterType(e.target.value)}
                     >
@@ -1592,7 +1618,7 @@ export default function App() {
                   <div className="w-64 relative">
                     <Users className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30" size={16} />
                     <select 
-                      className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm appearance-none focus:outline-none"
+                      className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm appearance-none focus:outline-none"
                       value={selectedAngkatan}
                       onChange={(e) => setSelectedAngkatan(e.target.value)}
                     >
@@ -1605,7 +1631,7 @@ export default function App() {
                 </div>
 
                 {/* Table */}
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden shadow-sm rounded-2xl border-slate-200">
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden shadow-sm rounded-2xl border-slate-200 dark:border-slate-700">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-indigo-600 text-white shadow-sm font-mono text-xs tracking-wide font-sans">
@@ -1624,16 +1650,16 @@ export default function App() {
                       {groupedSchedules.map((group) => (
                         <React.Fragment key={group.key}>
                           {group.entries.map((s, index) => (
-                            <tr key={s.id} className="hover:bg-slate-50 transition-colors group/row">
+                            <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-colors group/row">
                               {index === 0 && (
                                 <>
-                                  <td rowSpan={group.entries.length} className="p-4 text-sm font-mono font-bold border-r border-b border-slate-200/10 align-top bg-white">
+                                  <td rowSpan={group.entries.length} className="p-4 text-sm font-mono font-bold border-r border-b border-slate-200/10 align-top bg-white dark:bg-slate-800">
                                     {s.dayNumber}
                                   </td>
-                                  <td rowSpan={group.entries.length} className="p-4 text-xs font-mono border-r border-b border-slate-200/10 align-top bg-white uppercase tracking-tighter opacity-90">
+                                  <td rowSpan={group.entries.length} className="p-4 text-xs font-mono border-r border-b border-slate-200/10 align-top bg-white dark:bg-slate-800 uppercase tracking-tighter opacity-90">
                                     {s.angkatan}
                                   </td>
-                                  <td rowSpan={group.entries.length} className="p-4 text-sm border-r border-b border-slate-200/10 whitespace-nowrap align-top bg-white">
+                                  <td rowSpan={group.entries.length} className="p-4 text-sm border-r border-b border-slate-200/10 whitespace-nowrap align-top bg-white dark:bg-slate-800">
                                     {format(parseISO(s.date), 'EEEE, dd MMM yyyy', { locale: localeId })}
                                   </td>
                                 </>
@@ -1735,7 +1761,7 @@ export default function App() {
                     key={inst.id} 
                     whileHover={{ y: -4 }}
                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    className="bg-white border border-slate-200 p-6 shadow-md rounded-2xl group relative cursor-pointer hover:bg-slate-50 hover:shadow-lg transition-colors"
+                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6 shadow-md rounded-2xl group relative cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 hover:shadow-lg transition-colors"
                     onClick={() => setViewingInstructor(inst)}
                   >
                     <div className="flex items-start justify-between mb-4">
@@ -1832,7 +1858,7 @@ export default function App() {
                     )}
 
                     {inst.email && (
-                      <p className="text-xs mt-4 text-slate-500 border-t border-slate-200/5 pt-4 flex items-center gap-2">
+                      <p className="text-xs mt-4 text-slate-500 dark:text-slate-400 border-t border-slate-200/5 pt-4 flex items-center gap-2">
                         <Mail size={12} /> {inst.email}
                       </p>
                     )}
@@ -1843,7 +1869,7 @@ export default function App() {
                           e.stopPropagation();
                           exportInstructorToPDF(inst);
                         }}
-                        className="w-full flex items-center justify-center gap-2 border border-slate-200 py-2 text-xs font-bold tracking-wide font-sans hover:bg-slate-900 hover:text-white transition-colors"
+                        className="w-full flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700 py-2 text-xs font-bold tracking-wide font-sans hover:bg-slate-900 hover:text-white transition-colors"
                       >
                         <FileText size={14} />
                         Download Portfolio {new Date().getFullYear()}
@@ -1868,12 +1894,12 @@ export default function App() {
                 className="space-y-6"
               >
                 {/* Calendar Header */}
-                <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-slate-200  p-6 shadow-md rounded-2xl border-slate-200">
+                <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700  p-6 shadow-md rounded-2xl border-slate-200 dark:border-slate-700">
                   <div className="flex items-center gap-4">
                     <div className="w-48 relative">
                       <Users className="absolute left-3 top-1/2 -translate-y-1/2 opacity-30" size={16} />
                       <select 
-                        className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm text-sm appearance-none focus:outline-none"
+                        className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm appearance-none focus:outline-none"
                         value={selectedInstructorForCalendar?.id || ''}
                         onChange={(e) => {
                           const inst = allInstructors.find(i => i.id === e.target.value);
@@ -1902,7 +1928,7 @@ export default function App() {
                   <div className="flex items-center gap-4">
                     <button 
                       onClick={() => setCurrentCalendarMonth(subMonths(currentCalendarMonth, 1))}
-                      className="p-2 hover:bg-slate-900 hover:text-white transition-all border border-slate-200"
+                      className="p-2 hover:bg-slate-900 hover:text-white transition-all border border-slate-200 dark:border-slate-700"
                     >
                       <ChevronRight size={16} className="rotate-180" />
                     </button>
@@ -1911,13 +1937,13 @@ export default function App() {
                     </h2>
                     <button 
                       onClick={() => setCurrentCalendarMonth(addMonths(currentCalendarMonth, 1))}
-                      className="p-2 hover:bg-slate-900 hover:text-white transition-all border border-slate-200"
+                      className="p-2 hover:bg-slate-900 hover:text-white transition-all border border-slate-200 dark:border-slate-700"
                     >
                       <ChevronRight size={16} />
                     </button>
                     <button 
                       onClick={() => setCurrentCalendarMonth(new Date())}
-                      className="px-4 py-2 text-[10px] font-bold tracking-wide font-sans border border-slate-200 hover:bg-slate-900 hover:text-white transition-all"
+                      className="px-4 py-2 text-[10px] font-bold tracking-wide font-sans border border-slate-200 dark:border-slate-700 hover:bg-slate-900 hover:text-white transition-all"
                     >
                       Today
                     </button>
@@ -1925,7 +1951,7 @@ export default function App() {
                 </div>
 
                 {/* Calendar Grid */}
-                <div className="bg-white border border-slate-200  shadow-md rounded-2xl border-slate-200 overflow-hidden">
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700  shadow-md rounded-2xl border-slate-200 dark:border-slate-700 overflow-hidden">
                   <div className="grid grid-cols-7 bg-indigo-600 text-white shadow-sm text-xs tracking-wide font-sans font-medium">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                       <div key={day} className="p-3 text-center border-r border-[#F8FAFC]/10 last:border-r-0">{day}</div>
@@ -1956,7 +1982,7 @@ export default function App() {
                             key={day.toString()} 
                             className={cn(
                               "min-h-[120px] p-2 transition-colors",
-                              !isCurrentMonth ? "bg-slate-900/[0.02] opacity-30" : "bg-white",
+                              !isCurrentMonth ? "bg-slate-900/[0.02] opacity-30" : "bg-white dark:bg-slate-800",
                               isTodayDate && "ring-2 ring-inset ring-slate-300"
                             )}
                           >
@@ -1992,7 +2018,7 @@ export default function App() {
                                     }}
                                     className={cn(
                                       "p-1.5 text-[9px] leading-tight border rounded-sm cursor-pointer hover:border-slate-200/40 hover:shadow-sm transition-all",
-                                      (hasConflict || isOutsideAvailability) ? "bg-red-50 text-red-800 border-red-300" : "bg-slate-50 border-slate-200/10"
+                                      (hasConflict || isOutsideAvailability) ? "bg-red-50 text-red-800 border-red-300" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200/10"
                                     )}
                                     title={isOutsideAvailability ? "Di luar jam kerja" : hasConflict ? "Bentrok jadwal" : ""}
                                   >
@@ -2016,13 +2042,13 @@ export default function App() {
                 </div>
 
                 {/* Legend */}
-                <div className="flex gap-6 text-xs tracking-wide font-sans font-medium opacity-90 bg-white p-4 border border-slate-200">
+                <div className="flex gap-6 text-xs tracking-wide font-sans font-medium opacity-90 bg-white dark:bg-slate-800 p-4 border border-slate-200 dark:border-slate-700">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-green-500 rounded-full" />
                     <span>Available Day</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-slate-50 border border-slate-200/10" />
+                    <div className="w-3 h-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200/10" />
                     <span>Assigned Session</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -2041,7 +2067,7 @@ export default function App() {
                 exit={{ opacity: 0, y: -10 }}
                 className="space-y-6"
               >
-                <div className="bg-white border border-slate-200  p-6 shadow-md rounded-2xl border-slate-200">
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700  p-6 shadow-md rounded-2xl border-slate-200 dark:border-slate-700">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold tracking-tight uppercase">User Management</h2>
                   </div>
@@ -2075,7 +2101,7 @@ export default function App() {
                                   value={u.role}
                                   onChange={(e) => handleRoleChange(u.uid, e.target.value as 'admin' | 'user')}
                                   disabled={u.uid === user?.uid} // Prevent self-demotion
-                                  className="p-2 text-xs font-mono tracking-wide font-sans border border-slate-200 bg-white focus:outline-none disabled:opacity-50"
+                                  className="p-2 text-xs font-mono tracking-wide font-sans border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:outline-none disabled:opacity-50"
                                 >
                                   <option value="user">User</option>
                                   <option value="admin">Admin</option>
@@ -2126,7 +2152,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden"
+              className="relative w-full max-w-2xl bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
             >
               <div className="bg-indigo-600 text-white shadow-sm p-4 flex items-center justify-between">
                 <h3 className="font-bold tracking-wide font-sans text-sm">
@@ -2173,7 +2199,7 @@ export default function App() {
                     required 
                     placeholder="Contoh: Angkatan I, Batch 2024, dsb."
                     defaultValue={editingEntry?.angkatan || (selectedAngkatan !== 'All' ? selectedAngkatan : '')}
-                    className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                   />
                 </div>
 
@@ -2184,7 +2210,7 @@ export default function App() {
                     type="number" 
                     required 
                     defaultValue={editingEntry?.dayNumber}
-                    className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                   />
                 </div>
                 <div className="space-y-2">
@@ -2195,7 +2221,7 @@ export default function App() {
                     required 
                     defaultValue={editingEntry?.date}
                     onChange={(e) => setCurrentScheduleDate(e.target.value)}
-                    className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                   />
                 </div>
                 <div className="space-y-2">
@@ -2206,7 +2232,7 @@ export default function App() {
                     required 
                     defaultValue={editingEntry?.startTime}
                     onChange={(e) => setCurrentScheduleStartTime(e.target.value)}
-                    className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                   />
                 </div>
                 <div className="space-y-2">
@@ -2217,7 +2243,7 @@ export default function App() {
                     required 
                     defaultValue={editingEntry?.endTime}
                     onChange={(e) => setCurrentScheduleEndTime(e.target.value)}
-                    className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                   />
                 </div>
                 <div className="col-span-2 space-y-2">
@@ -2228,7 +2254,7 @@ export default function App() {
                     required 
                     value={currentSubject}
                     onChange={(e) => setCurrentSubject(e.target.value)}
-                    className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                   />
                 </div>
                 <div className="space-y-2">
@@ -2239,7 +2265,7 @@ export default function App() {
                     required 
                     value={currentJp}
                     onChange={(e) => setCurrentJp(e.target.value ? Number(e.target.value) : '')}
-                    className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                   />
                 </div>
                 <div className="space-y-2">
@@ -2251,7 +2277,7 @@ export default function App() {
                     value={currentScheduleType}
                     onChange={(e) => setCurrentScheduleType(e.target.value)}
                     placeholder="Pilih atau ketik tipe sesi..."
-                    className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                   />
                   <datalist id="session-types">
                     <option value="Synchronous" />
@@ -2272,11 +2298,11 @@ export default function App() {
                         placeholder="Cari pengajar..."
                         value={instructorSearch}
                         onChange={(e) => setInstructorSearch(e.target.value)}
-                        className="w-full pl-7 pr-2 py-1 bg-white border border-slate-200 rounded-xl shadow-sm text-[10px] focus:outline-none"
+                        className="w-full pl-7 pr-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-[10px] focus:outline-none"
                       />
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2 p-4 bg-white border border-slate-200 rounded-xl shadow-sm min-h-[80px] max-h-[160px] overflow-y-auto">
+                  <div className="flex flex-wrap gap-2 p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm min-h-[80px] max-h-[160px] overflow-y-auto">
                     {/* Selected Custom Instructors (not in DB) */}
                     {selectedInstructorNames
                       .filter(name => !instructors.some(inst => inst.name === name))
@@ -2292,7 +2318,7 @@ export default function App() {
                             }}
                             className="peer sr-only"
                           />
-                          <div className="px-3 py-1.5 text-xs font-bold border border-slate-200 transition-all flex items-center gap-2 bg-indigo-600 text-white shadow-sm hover:bg-indigo-700">
+                          <div className="px-3 py-1.5 text-xs font-bold border border-slate-200 dark:border-slate-700 transition-all flex items-center gap-2 bg-indigo-600 text-white shadow-sm hover:bg-indigo-700">
                             {name}
                             <span className="text-[8px] opacity-90 tracking-wide font-sans">(Luar)</span>
                           </div>
@@ -2319,10 +2345,10 @@ export default function App() {
                               }}
                               className="peer sr-only"
                             />
-                            <div className={`px-3 py-1.5 text-xs font-bold border border-slate-200 transition-all flex items-center gap-2
+                            <div className={`px-3 py-1.5 text-xs font-bold border border-slate-200 dark:border-slate-700 transition-all flex items-center gap-2
                               ${availability === true ? 'ring-2 ring-green-500 ring-offset-1' : ''}
                               ${availability === false ? 'opacity-90 grayscale' : ''}
-                              bg-slate-50 peer-checked:bg-slate-900 peer-checked:text-white hover:bg-slate-100 peer-checked:hover:bg-indigo-700`}>
+                              bg-slate-50 dark:bg-slate-800/50 peer-checked:bg-slate-900 peer-checked:text-white hover:bg-slate-100 peer-checked:hover:bg-indigo-700`}>
                               {inst.name}
                               {availability === true && (
                                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Available" />
@@ -2364,7 +2390,7 @@ export default function App() {
                           }
                         }
                       }}
-                      className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-xl shadow-sm text-xs focus:outline-none"
+                      className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-xs focus:outline-none"
                     />
                     <button
                       type="button"
@@ -2394,14 +2420,14 @@ export default function App() {
                       setCurrentJp('');
                       setCurrentSubject('');
                     }}
-                    className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 hover:bg-slate-50 transition-all"
+                    className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-all"
                   >
                     Batal
                   </button>
                   <button 
                     type="submit"
                     value="continue"
-                    className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 bg-white hover:bg-slate-50 transition-all"
+                    className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-all"
                   >
                     Simpan & Lanjut Isi
                   </button>
@@ -2435,20 +2461,20 @@ export default function App() {
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="bg-white border text-left border-slate-200 shadow-2xl relative z-10 w-full max-w-2xl max-h-[90vh] flex flex-col font-sans"
+              className="bg-white dark:bg-slate-800 border text-left border-slate-200 dark:border-slate-700 shadow-2xl relative z-10 w-full max-w-2xl max-h-[90vh] flex flex-col font-sans"
             >
-              <div className="flex justify-between items-center p-6 border-b border-slate-200 bg-slate-50">
+              <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                 <div>
-                  <h3 className="text-xl font-serif font-bold text-slate-900">
+                  <h3 className="text-xl font-serif font-bold text-slate-900 dark:text-slate-100">
                     {editingProgram ? 'Edit Program' : 'Add New Program'}
                   </h3>
-                  <p className="text-xs text-slate-500 font-mono mt-1 uppercase tracking-wider">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1 uppercase tracking-wider">
                     {editingProgram ? 'Update program details' : 'Create a new training program entry'}
                   </p>
                 </div>
                 <button 
                   onClick={() => setIsProgramModalOpen(false)}
-                  className="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-2 rounded-full transition-colors"
+                  className="text-slate-400 hover:text-slate-600 dark:text-slate-300 hover:bg-slate-200 p-2 rounded-full transition-colors"
                 >
                   <X size={20} />
                 </button>
@@ -2472,7 +2498,7 @@ export default function App() {
                         value={programTitle}
                         onChange={(e) => setProgramTitle(e.target.value)}
                         placeholder="e.g. Pelatihan Teknis Perkantoran"
-                        className="w-full p-3 text-sm border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
+                        className="w-full p-3 text-sm border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
                       />
                     </div>
 
@@ -2482,7 +2508,7 @@ export default function App() {
                         required
                         value={programType}
                         onChange={(e) => setProgramType(e.target.value as any)}
-                        className="w-full p-3 text-sm border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
+                        className="w-full p-3 text-sm border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
                       >
                         <option value="Struktural">Struktural</option>
                         <option value="Teknis">Teknis</option>
@@ -2499,7 +2525,7 @@ export default function App() {
                         value={programDescription}
                         onChange={(e) => setProgramDescription(e.target.value)}
                         placeholder="Description of the program..."
-                        className="w-full p-3 text-sm border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                        className="w-full p-3 text-sm border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                       />
                     </div>
 
@@ -2511,7 +2537,7 @@ export default function App() {
                         value={programObjective}
                         onChange={(e) => setProgramObjective(e.target.value)}
                         placeholder="Main objective of the program..."
-                        className="w-full p-3 text-sm border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                        className="w-full p-3 text-sm border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                       />
                     </div>
                     
@@ -2523,17 +2549,17 @@ export default function App() {
                         value={programTargetAudience}
                         onChange={(e) => setProgramTargetAudience(e.target.value)}
                         placeholder="e.g. All employees, PNS, CPNS..."
-                        className="w-full p-3 text-sm border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                        className="w-full p-3 text-sm border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                       />
                     </div>
                   </div>
                 </div>
                 
-                <div className="p-6 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 mt-auto">
+                <div className="p-6 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3 mt-auto">
                   <button 
                     type="button" 
                     onClick={() => setIsProgramModalOpen(false)}
-                    className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+                    className="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-colors"
                   >
                     Cancel
                   </button>
@@ -2566,7 +2592,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[90vh]"
             >
               <div className="bg-indigo-600 text-white shadow-sm p-4 flex items-center justify-between shrink-0">
                 <h3 className="font-bold tracking-wide font-sans text-sm">
@@ -2586,7 +2612,7 @@ export default function App() {
                       type="text" 
                       required 
                       defaultValue={editingInstructor?.name}
-                      className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                      className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                     />
                   </div>
                   <div className="space-y-2">
@@ -2596,7 +2622,7 @@ export default function App() {
                       type="text" 
                       defaultValue={editingInstructor?.role}
                       placeholder="e.g. Senior Facilitator"
-                      className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                      className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                     />
                   </div>
                   <div className="space-y-2">
@@ -2605,7 +2631,7 @@ export default function App() {
                       name="email" 
                       type="email" 
                       defaultValue={editingInstructor?.email}
-                      className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                      className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                     />
                   </div>
 
@@ -2623,7 +2649,7 @@ export default function App() {
                     </div>
                     <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
                       {instructorAvailability.map((slot, idx) => (
-                        <div key={idx} className="flex items-center gap-2 bg-white p-2 border border-slate-200/10">
+                        <div key={idx} className="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 border border-slate-200/10">
                           <select 
                             value={slot.day}
                             onChange={(e) => {
@@ -2680,11 +2706,11 @@ export default function App() {
                   </div>
                 </div>
                 
-                <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-4 shrink-0">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-4 shrink-0">
                   <button 
                     type="button"
                     onClick={() => setIsInstructorModalOpen(false)}
-                    className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 hover:bg-slate-50 transition-all"
+                    className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-all"
                   >
                     Cancel
                   </button>
@@ -2717,7 +2743,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[90vh]"
             >
               <div className="bg-indigo-600 text-white shadow-sm p-4 flex items-center justify-between shrink-0">
                 <h3 className="font-bold tracking-wide font-sans text-sm flex items-center gap-2">
@@ -2732,7 +2758,7 @@ export default function App() {
               <form onSubmit={handleSaveAvailability} className="flex flex-col overflow-hidden">
                 <div className="p-8 space-y-6 overflow-y-auto">
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-xs text-slate-500 max-w-sm">Set times when the instructor is available to teach. Any time outside these slots will throw a conflict warning.</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm">Set times when the instructor is available to teach. Any time outside these slots will throw a conflict warning.</p>
                     <button 
                       type="button"
                       onClick={() => setEditingAvailability([...editingAvailability, { day: 1, startTime: '08:00', endTime: '16:00' }])}
@@ -2744,7 +2770,7 @@ export default function App() {
                   
                   <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                     {editingAvailability.map((slot, idx) => (
-                      <div key={idx} className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <div key={idx} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                         <select 
                           value={slot.day}
                           onChange={(e) => {
@@ -2752,7 +2778,7 @@ export default function App() {
                             newAvail[idx].day = parseInt(e.target.value);
                             setEditingAvailability(newAvail);
                           }}
-                          className="flex-1 p-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-600 font-medium"
+                          className="flex-1 p-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-600 font-medium"
                         >
                           <option value={1}>Monday</option>
                           <option value={2}>Tuesday</option>
@@ -2770,7 +2796,7 @@ export default function App() {
                             newAvail[idx].startTime = e.target.value;
                             setEditingAvailability(newAvail);
                           }}
-                          className="w-28 p-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-600 font-mono"
+                          className="w-28 p-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-600 font-mono"
                         />
                         <span className="text-xs text-slate-400 font-medium">to</span>
                         <input 
@@ -2781,7 +2807,7 @@ export default function App() {
                             newAvail[idx].endTime = e.target.value;
                             setEditingAvailability(newAvail);
                           }}
-                          className="w-28 p-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-600 font-mono"
+                          className="w-28 p-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-600 font-mono"
                         />
                         <button 
                           type="button"
@@ -2794,20 +2820,20 @@ export default function App() {
                       </div>
                     ))}
                     {editingAvailability.length === 0 && (
-                      <div className="py-8 text-center bg-slate-50 border border-dashed border-slate-300 rounded-2xl">
+                      <div className="py-8 text-center bg-slate-50 dark:bg-slate-800/50 border border-dashed border-slate-300 rounded-2xl">
                         <Clock size={24} className="mx-auto text-slate-400 mb-2" />
-                        <p className="text-sm font-medium text-slate-600">No availability slots defined</p>
-                        <p className="text-xs text-slate-500 mt-1">Instructor has no defined teaching hours.</p>
+                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">No availability slots defined</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Instructor has no defined teaching hours.</p>
                       </div>
                     )}
                   </div>
                 </div>
                 
-                <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-4 shrink-0">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-4 shrink-0">
                   <button 
                     type="button"
                     onClick={() => setIsAvailabilityModalOpen(false)}
-                    className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 hover:bg-slate-50 transition-all"
+                    className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-all"
                   >
                     Cancel
                   </button>
@@ -2840,7 +2866,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]"
             >
               <div className="bg-indigo-600 text-white shadow-sm p-4 flex items-center justify-between shrink-0">
                 <h3 className="font-bold tracking-wide font-sans text-sm flex items-center gap-2">
@@ -2859,7 +2885,7 @@ export default function App() {
                     <select 
                       value={duplicateSourceAngkatan}
                       onChange={(e) => setDuplicateSourceAngkatan(e.target.value)}
-                      className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                      className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                       required
                     >
                       <option value="" disabled>Pilih Angkatan Sumber...</option>
@@ -2876,7 +2902,7 @@ export default function App() {
                       value={duplicateTargetAngkatan}
                       onChange={(e) => setDuplicateTargetAngkatan(e.target.value)}
                       placeholder="Contoh: Angkatan II"
-                      className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                      className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                       required
                     />
                   </div>
@@ -2887,7 +2913,7 @@ export default function App() {
                       type="number" 
                       value={duplicateDateOffset}
                       onChange={(e) => setDuplicateDateOffset(Number(e.target.value))}
-                      className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                      className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                       required
                     />
                     <p className="text-xs font-mono opacity-90">
@@ -2896,11 +2922,11 @@ export default function App() {
                   </div>
                 </div>
                 
-                <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-4 shrink-0">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-4 shrink-0">
                   <button 
                     type="button"
                     onClick={() => setIsDuplicateModalOpen(false)}
-                    className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 hover:bg-slate-50 transition-all"
+                    className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-all"
                   >
                     Cancel
                   </button>
@@ -2933,22 +2959,22 @@ export default function App() {
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="bg-white border text-left border-slate-200 shadow-2xl relative z-10 w-full max-w-md max-h-[90vh] flex flex-col font-sans"
+              className="bg-white dark:bg-slate-800 border text-left border-slate-200 dark:border-slate-700 shadow-2xl relative z-10 w-full max-w-md max-h-[90vh] flex flex-col font-sans"
             >
-              <div className="flex justify-between items-center p-6 border-b border-slate-200 bg-slate-50">
+              <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                 <div>
-                  <h3 className="text-xl font-serif font-bold text-slate-900 flex items-center gap-2">
+                  <h3 className="text-xl font-serif font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <Upload size={20} />
                     Import PDF/Image
                   </h3>
-                  <p className="text-xs text-slate-500 font-mono mt-1 uppercase tracking-wider">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1 uppercase tracking-wider">
                     Powered by AI Studio
                   </p>
                 </div>
                 <button 
                   onClick={() => setIsImportModalOpen(false)}
                   disabled={isImporting}
-                  className="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-2 rounded-full transition-colors"
+                  className="text-slate-400 hover:text-slate-600 dark:text-slate-300 hover:bg-slate-200 p-2 rounded-full transition-colors"
                 >
                   <X size={20} />
                 </button>
@@ -2981,21 +3007,21 @@ export default function App() {
                       value={importTargetAngkatan}
                       onChange={(e) => setImportTargetAngkatan(e.target.value)}
                       placeholder="e.g. Angkatan XVII"
-                      className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                      className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                       required
                     />
-                    <p className="text-[10px] text-slate-500 font-mono">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
                       // Existing items in this batch won't be overwritten.
                     </p>
                   </div>
                 </div>
                 
-                <div className="p-6 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 mt-auto">
+                <div className="p-6 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3 mt-auto">
                   <button 
                     type="button" 
                     disabled={isImporting}
                     onClick={() => setIsImportModalOpen(false)}
-                    className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+                    className="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-colors"
                   >
                     Cancel
                   </button>
@@ -3037,7 +3063,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]"
             >
               <div className="bg-red-600 text-white p-4 flex items-center justify-between shrink-0">
                 <h3 className="font-bold tracking-wide font-sans text-sm flex items-center gap-2">
@@ -3056,7 +3082,7 @@ export default function App() {
                     <select 
                       value={deleteBatchTarget}
                       onChange={(e) => setDeleteBatchTarget(e.target.value)}
-                      className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm focus:outline-none"
+                      className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm focus:outline-none"
                       required
                     >
                       <option value="" disabled>Pilih Angkatan...</option>
@@ -3070,11 +3096,11 @@ export default function App() {
                   </div>
                 </div>
                 
-                <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-4 shrink-0">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-4 shrink-0">
                   <button 
                     type="button"
                     onClick={() => setIsDeleteBatchModalOpen(false)}
-                    className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 hover:bg-slate-50 transition-all"
+                    className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-all"
                   >
                     Cancel
                   </button>
@@ -3107,9 +3133,9 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-slate-50 border border-slate-200 rounded-3xl shadow-2xl rounded-3xl border border-slate-100 p-10 max-w-md w-full bg-white relative z-10"
+              className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl rounded-3xl border border-slate-100 p-10 max-w-md w-full bg-white dark:bg-slate-800 relative z-10"
             >
-              <div className="flex items-center justify-between mb-6 border-b border-slate-200 pb-4">
+              <div className="flex items-center justify-between mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">
                 <h2 className="text-2xl font-bold uppercase tracking-tighter flex items-center gap-2">
                   <Mail size={24} />
                   Send Reminders
@@ -3130,7 +3156,7 @@ export default function App() {
                     value={reminderTiming}
                     onChange={(e) => setReminderTiming(Number(e.target.value))}
                     disabled={isSendingReminders}
-                    className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-600"
                   >
                     <option value={12}>Next 12 Hours</option>
                     <option value={24}>Next 24 Hours</option>
@@ -3150,7 +3176,7 @@ export default function App() {
                     onChange={(e) => setReminderMessage(e.target.value)}
                     disabled={isSendingReminders}
                     rows={4}
-                    className="w-full p-3 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-600 resize-none"
+                    className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-600 resize-none"
                     placeholder="Enter a custom message for the instructors..."
                   />
                 </div>
@@ -3176,7 +3202,7 @@ export default function App() {
                     type="button"
                     onClick={() => setIsReminderModalOpen(false)}
                     disabled={isSendingReminders}
-                    className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans hover:bg-slate-50 transition-all disabled:opacity-50"
+                    className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-all disabled:opacity-50"
                   >
                     Close
                   </button>
@@ -3219,7 +3245,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-5xl max-h-[90vh] flex flex-col bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden"
+              className="relative w-full max-w-5xl max-h-[90vh] flex flex-col bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
             >
               <div className="bg-indigo-600 text-white shadow-sm p-4 flex items-center justify-between shrink-0">
                 <h3 className="font-bold tracking-wide font-sans text-sm">
@@ -3230,17 +3256,17 @@ export default function App() {
                 </button>
               </div>
               
-              <div className="p-6 overflow-auto bg-white m-4 border border-slate-200 shadow-inner">
+              <div className="p-6 overflow-auto bg-white dark:bg-slate-800 m-4 border border-slate-200 dark:border-slate-700 shadow-inner">
                 {/* Configuration Section (Admin Only) */}
                 {isAdmin && (
-                  <div className="mb-6 p-4 bg-slate-50 border border-slate-200/10 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200/10 grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-xs font-bold tracking-wide font-sans mb-1">Penyelenggara</label>
                       <input 
                         type="text" 
                         value={organizer}
                         onChange={(e) => setOrganizer(e.target.value)}
-                        className="w-full p-2 text-sm border border-slate-200/20 focus:outline-none focus:border-slate-200 uppercase"
+                        className="w-full p-2 text-sm border border-slate-200/20 focus:outline-none focus:border-slate-200 dark:border-slate-700 uppercase"
                         placeholder="Contoh: BPSDM Provinsi..."
                       />
                     </div>
@@ -3249,7 +3275,7 @@ export default function App() {
                       <select 
                         value={trainingMethod}
                         onChange={(e) => setTrainingMethod(e.target.value)}
-                        className="w-full p-2 text-sm border border-slate-200/20 focus:outline-none focus:border-slate-200"
+                        className="w-full p-2 text-sm border border-slate-200/20 focus:outline-none focus:border-slate-200 dark:border-slate-700"
                       >
                         <option value="Distance Learning">Distance Learning</option>
                         <option value="Blended Learning">Blended Learning</option>
@@ -3261,7 +3287,7 @@ export default function App() {
                       <select 
                         value={previewAngkatan}
                         onChange={(e) => setPreviewAngkatan(e.target.value)}
-                        className="w-full p-2 text-sm border border-slate-200/20 focus:outline-none focus:border-slate-200 font-bold"
+                        className="w-full p-2 text-sm border border-slate-200/20 focus:outline-none focus:border-slate-200 dark:border-slate-700 font-bold"
                       >
                         <option value="All">Semua Angkatan</option>
                         {allAngkatan.map(a => (
@@ -3284,7 +3310,7 @@ export default function App() {
                 
                 <table className="w-full text-left border-collapse text-[10px]">
                   <thead>
-                    <tr className="bg-slate-50 font-mono tracking-wide font-sans">
+                    <tr className="bg-slate-50 dark:bg-slate-800/50 font-mono tracking-wide font-sans">
                       {previewAngkatan === 'All' && <th className="p-2 border border-slate-200/20">Angkatan</th>}
                       <th className="p-2 border border-slate-200/20 text-center">Hari</th>
                       <th className="p-2 border border-slate-200/20">Tanggal</th>
@@ -3342,10 +3368,10 @@ export default function App() {
                 </table>
               </div>
               
-              <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-4 shrink-0">
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-4 shrink-0">
                 <button 
                   onClick={() => setIsExportReviewModalOpen(false)}
-                  className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 hover:bg-slate-50 transition-all"
+                  className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-all"
                 >
                   Cancel
                 </button>
@@ -3383,7 +3409,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden"
+              className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
             >
               <div className="bg-red-600 text-white p-4 flex items-center justify-between">
                 <h3 className="font-bold tracking-wide font-sans text-sm">
@@ -3402,10 +3428,10 @@ export default function App() {
                 </p>
               </div>
               
-              <div className="p-4 bg-white border-t border-slate-200 flex justify-end gap-4">
+              <div className="p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-4">
                 <button 
                   onClick={() => setDeleteConfirm(null)}
-                  className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 hover:bg-slate-50 transition-all"
+                  className="px-5 py-2.5 text-sm font-medium rounded-full tracking-wide font-sans border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-all"
                 >
                   Cancel
                 </button>
@@ -3436,7 +3462,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-2xl bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]"
             >
               <div className="bg-indigo-600 text-white shadow-sm p-4 flex items-center justify-between shrink-0">
                 <h3 className="font-bold tracking-wide font-sans text-sm">
@@ -3469,11 +3495,11 @@ export default function App() {
                   
                   {instructorJpStats[viewingInstructor.name] && (
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white border border-slate-200  p-3 shadow-md rounded-2xl border-slate-200 text-center min-w-[100px]">
+                      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700  p-3 shadow-md rounded-2xl border-slate-200 dark:border-slate-700 text-center min-w-[100px]">
                         <p className="text-xs tracking-wide font-sans font-medium opacity-70">Total JP</p>
                         <p className="text-2xl font-bold">{instructorJpStats[viewingInstructor.name].totalJp}</p>
                       </div>
-                      <div className="bg-white border border-slate-200  p-3 shadow-md rounded-2xl border-slate-200 text-center min-w-[100px]">
+                      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700  p-3 shadow-md rounded-2xl border-slate-200 dark:border-slate-700 text-center min-w-[100px]">
                         <p className="text-xs tracking-wide font-sans font-medium opacity-70">Total Jam</p>
                         <p className="text-2xl font-bold">{(instructorJpStats[viewingInstructor.name].totalJp * 45) / 60}</p>
                       </div>
@@ -3496,7 +3522,7 @@ export default function App() {
                 {instructorJpStats[viewingInstructor.name] && (
                   <div className="space-y-4 mb-8">
                     <h4 className="font-bold tracking-wide font-sans border-b border-slate-200/20 pb-2">Rincian Jam Pelajaran (JP)</h4>
-                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
                       {instructorJpStats[viewingInstructor.name].totalJp > 0 ? (
                         <table className="w-full text-left text-sm">
                           <thead className="bg-indigo-600 text-white shadow-sm font-mono text-xs tracking-wide font-sans">
@@ -3510,7 +3536,7 @@ export default function App() {
                           <tbody className="divide-y divide-slate-200">
                             {Object.entries(instructorJpStats[viewingInstructor.name].trainingJp).map(([training, angkatans]) => (
                               Object.entries(angkatans).map(([angkatan, jp], idx) => (
-                                <tr key={`${training}-${angkatan}`} className="hover:bg-slate-50 transition-colors">
+                                <tr key={`${training}-${angkatan}`} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-colors">
                                   {idx === 0 ? (
                                     <td className="p-3 font-bold align-top" rowSpan={Object.keys(angkatans).length}>
                                       {training}
@@ -3523,7 +3549,7 @@ export default function App() {
                               ))
                             ))}
                           </tbody>
-                          <tfoot className="bg-slate-50 font-bold border-t border-slate-200">
+                          <tfoot className="bg-slate-50 dark:bg-slate-800/50 font-bold border-t border-slate-200 dark:border-slate-700">
                             <tr>
                               <td colSpan={2} className="p-3 text-right text-xs tracking-wide font-sans">Total Keseluruhan</td>
                               <td className="p-3 text-right text-lg">{instructorJpStats[viewingInstructor.name].totalJp} JP</td>
@@ -3548,7 +3574,7 @@ export default function App() {
                         {viewingInstructor.availability
                           .sort((a, b) => (a.day === 0 ? 7 : a.day) - (b.day === 0 ? 7 : b.day)) // Sort by day Mon-Sun
                           .map((slot, idx) => (
-                            <div key={idx} className="bg-white p-3 border border-slate-200/10 flex items-center justify-between">
+                            <div key={idx} className="bg-white dark:bg-slate-800 p-3 border border-slate-200/10 flex items-center justify-between">
                               <span className="font-bold text-xs tracking-wide font-sans">
                                 {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][slot.day]}
                               </span>
@@ -3577,10 +3603,10 @@ export default function App() {
                           
                           return (
                             <div key={s.id} className={cn(
-                              "bg-white p-4 border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:bg-slate-50",
+                              "bg-white dark:bg-slate-800 p-4 border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50",
                               isOutsideAvailability ? "border-red-400 bg-red-50/50 shadow-md border-red-200" : 
                               hasOverlap ? "border-amber-400 bg-amber-50/50 shadow-md border-amber-200" : 
-                              "border-slate-200"
+                              "border-slate-200 dark:border-slate-700"
                             )}>
                               <div className="flex-1">
                                 <div className="flex flex-wrap items-center gap-2">
