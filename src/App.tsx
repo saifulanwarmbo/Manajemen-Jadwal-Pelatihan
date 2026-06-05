@@ -257,6 +257,7 @@ export default function App() {
   const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
   const [availabilityInstructor, setAvailabilityInstructor] = useState<Instructor | null>(null);
   const [editingAvailability, setEditingAvailability] = useState<DayAvailability[]>([]);
+  const [draggedScheduleId, setDraggedScheduleId] = useState<string | null>(null);
 
   const [isExportReviewModalOpen, setIsExportReviewModalOpen] = useState(false);
   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
@@ -644,6 +645,43 @@ export default function App() {
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'programs');
       setProgramFormError('Gagal menyimpan program. Periksa koneksi dan izin.');
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    if (!isAdmin) return;
+    e.dataTransfer.setData('text/plain', id);
+    setDraggedScheduleId(id);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!isAdmin) return;
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetId: string) => {
+    if (!isAdmin) return;
+    e.preventDefault();
+    const id = e.dataTransfer.getData('text/plain');
+    setDraggedScheduleId(null);
+    
+    if (!id || id === targetId) return;
+    
+    const scheduleToUpdate = schedules.find(s => s.id === id);
+    const targetSchedule = schedules.find(s => s.id === targetId);
+    
+    if (!scheduleToUpdate || !targetSchedule) return;
+    if (scheduleToUpdate.date === targetSchedule.date && scheduleToUpdate.dayNumber === targetSchedule.dayNumber && scheduleToUpdate.angkatan === targetSchedule.angkatan) return;
+    
+    try {
+      await updateDoc(doc(db, 'schedules', id), {
+        date: targetSchedule.date,
+        dayNumber: targetSchedule.dayNumber,
+        angkatan: targetSchedule.angkatan,
+        updatedAt: Timestamp.now()
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, 'schedules');
     }
   };
 
@@ -1650,7 +1688,18 @@ export default function App() {
                       {groupedSchedules.map((group) => (
                         <React.Fragment key={group.key}>
                           {group.entries.map((s, index) => (
-                            <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-colors group/row">
+                            <tr 
+                              key={s.id} 
+                              className={cn(
+                                "hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-colors group/row",
+                                draggedScheduleId === s.id && "opacity-50",
+                                isAdmin && "cursor-move"
+                              )}
+                              draggable={isAdmin}
+                              onDragStart={(e) => handleDragStart(e, s.id!)}
+                              onDragOver={handleDragOver}
+                              onDrop={(e) => handleDrop(e, s.id!)}
+                            >
                               {index === 0 && (
                                 <>
                                   <td rowSpan={group.entries.length} className="p-4 text-sm font-mono font-bold border-r border-b border-slate-200/10 align-top bg-white dark:bg-slate-800">
@@ -3604,37 +3653,37 @@ export default function App() {
                           return (
                             <div key={s.id} className={cn(
                               "bg-white dark:bg-slate-800 p-4 border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50",
-                              isOutsideAvailability ? "border-red-400 bg-red-50/50 shadow-md border-red-200" : 
-                              hasOverlap ? "border-amber-400 bg-amber-50/50 shadow-md border-amber-200" : 
+                              isOutsideAvailability ? "border-red-400 bg-red-50/50 shadow-md border-red-200 dark:bg-red-900/20 dark:border-red-800" : 
+                              hasOverlap ? "border-amber-400 bg-amber-50/50 shadow-md border-amber-200 dark:bg-amber-900/20 dark:border-amber-800" : 
                               "border-slate-200 dark:border-slate-700"
                             )}>
                               <div className="flex-1">
                                 <div className="flex flex-wrap items-center gap-2">
                                   <p className={cn("font-bold truncate max-w-[250px]", 
-                                    isOutsideAvailability ? "text-red-700" : 
-                                    hasOverlap ? "text-amber-700" : ""
+                                    isOutsideAvailability ? "text-red-700 dark:text-red-400" : 
+                                    hasOverlap ? "text-amber-700 dark:text-amber-400" : ""
                                   )}>{s.subject}</p>
                                   
                                   {hasOverlap && (
-                                    <div className="flex items-center gap-1 text-[9px] bg-amber-100 text-amber-700 px-2 py-0.5 font-bold tracking-wide font-sans border border-amber-200" title="Schedule Conflict">
+                                    <div className="flex items-center gap-1 text-[9px] bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 px-2 py-0.5 font-bold tracking-wide font-sans border border-amber-200 dark:border-amber-800/50" title="Schedule Conflict">
                                       <AlertTriangle size={10} /> Bentrok
                                     </div>
                                   )}
                                   {isOutsideAvailability && (
-                                    <div className="flex items-center gap-1 text-[9px] bg-red-100 text-red-700 px-2 py-0.5 font-bold tracking-wide font-sans border border-red-200" title="Di Luar Jam Kerja">
+                                    <div className="flex items-center gap-1 text-[9px] bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 px-2 py-0.5 font-bold tracking-wide font-sans border border-red-200 dark:border-red-800/50" title="Di Luar Jam Kerja">
                                       <AlertTriangle size={10} /> Di Luar Ketersediaan
                                     </div>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-2 text-xs font-mono opacity-90 mt-1">
-                                  <span className="bg-slate-100 px-1 py-0.5">{s.angkatan}</span>
+                                <div className="flex items-center gap-2 text-xs font-mono opacity-90 mt-1 text-slate-800 dark:text-slate-300">
+                                  <span className="bg-slate-100 dark:bg-slate-700 px-1 py-0.5">{s.angkatan}</span>
                                   <span>•</span>
                                   <span>{format(parseISO(s.date), 'EEEE, dd MMM yyyy', { locale: localeId })}</span>
                                 </div>
                               </div>
-                              <div className="text-left sm:text-right shrink-0 border-l sm:border-l-0 sm:pl-0 pl-4 border-slate-200/10">
-                                <p className="font-mono text-sm font-bold">{s.startTime} - {s.endTime}</p>
-                                <p className="text-[10px] tracking-wide font-sans opacity-90 mt-0.5">{s.type} • {s.jp} JP</p>
+                              <div className="text-left sm:text-right shrink-0 border-l sm:border-l-0 sm:pl-0 pl-4 border-slate-200/10 dark:border-slate-700 tracking-wide">
+                                <p className="font-mono text-sm font-bold text-slate-900 dark:text-slate-200">{s.startTime} - {s.endTime}</p>
+                                <p className="text-[10px] tracking-wide font-sans opacity-90 mt-0.5 text-slate-700 dark:text-slate-400">{s.type} • {s.jp} JP</p>
                               </div>
                             </div>
                           );
@@ -3653,23 +3702,23 @@ export default function App() {
                     </h4>
                     <div className="space-y-3">
                       {instructorConflictsMap[viewingInstructor.name].map((c, idx) => (
-                        <div key={idx} className="bg-red-50 p-4 border border-red-200">
-                          <p className="text-xs tracking-wide font-sans font-medium text-red-600 mb-2">Conflict #{idx + 1}</p>
+                        <div key={idx} className="bg-red-50 dark:bg-red-900/20 p-4 border border-red-200 dark:border-red-800">
+                          <p className="text-xs tracking-wide font-sans font-medium text-red-600 dark:text-red-400 mb-2">Conflict #{idx + 1}</p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="p-2 bg-white/50 border border-red-100">
-                              <p className="text-[10px] font-bold uppercase opacity-90">Session A</p>
-                              <p className="font-bold text-sm">{c.s1.subject}</p>
-                              <p className="text-xs font-mono">{c.s1.angkatan}</p>
-                              <p className="text-xs mt-1">{c.s1.startTime} - {c.s1.endTime}</p>
+                            <div className="p-2 bg-white/50 dark:bg-slate-800/50 border border-red-100 dark:border-red-800">
+                              <p className="text-[10px] font-bold uppercase opacity-90 text-slate-800 dark:text-slate-300">Session A</p>
+                              <p className="font-bold text-sm text-slate-900 dark:text-slate-200">{c.s1.subject}</p>
+                              <p className="text-xs font-mono text-slate-700 dark:text-slate-400">{c.s1.angkatan}</p>
+                              <p className="text-xs mt-1 text-slate-700 dark:text-slate-400">{c.s1.startTime} - {c.s1.endTime}</p>
                             </div>
-                            <div className="p-2 bg-white/50 border border-red-100">
-                              <p className="text-[10px] font-bold uppercase opacity-90">Session B</p>
-                              <p className="font-bold text-sm">{c.s2.subject}</p>
-                              <p className="text-xs font-mono">{c.s2.angkatan}</p>
-                              <p className="text-xs mt-1">{c.s2.startTime} - {c.s2.endTime}</p>
+                            <div className="p-2 bg-white/50 dark:bg-slate-800/50 border border-red-100 dark:border-red-800">
+                              <p className="text-[10px] font-bold uppercase opacity-90 text-slate-800 dark:text-slate-300">Session B</p>
+                              <p className="font-bold text-sm text-slate-900 dark:text-slate-200">{c.s2.subject}</p>
+                              <p className="text-xs font-mono text-slate-700 dark:text-slate-400">{c.s2.angkatan}</p>
+                              <p className="text-xs mt-1 text-slate-700 dark:text-slate-400">{c.s2.startTime} - {c.s2.endTime}</p>
                             </div>
                           </div>
-                          <p className="text-[10px] mt-2 text-red-600 font-mono italic">
+                          <p className="text-[10px] mt-2 text-red-600 dark:text-red-400 font-mono italic">
                             Date: {format(parseISO(c.s1.date), 'EEEE, dd MMMM yyyy', { locale: localeId })}
                           </p>
                         </div>
