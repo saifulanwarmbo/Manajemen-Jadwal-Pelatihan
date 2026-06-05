@@ -1460,7 +1460,7 @@ export default function App() {
                             </p>
                           </div>
                         </div>
-                        <Badge variant={s.type === 'Synchronous' ? 'info' : 'default'}>{s.type}</Badge>
+                        <Badge variant={s.type === 'Synchronous' ? 'success' : s.type === 'Asynchronous' ? 'info' : 'default'}>{s.type}</Badge>
                       </div>
                     ))}
                     {schedules.length === 0 && (
@@ -1484,7 +1484,7 @@ export default function App() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
                   <div>
                     <h2 className="text-3xl font-serif tracking-tight mb-2">Training Programs</h2>
-                    <p className="text-slate-500 dark:text-slate-400 font-mono text-xs max-w-2xl bg-white/50 inline-block px-2">
+                    <p className="text-slate-500 dark:text-slate-300 font-mono text-xs max-w-2xl bg-white/50 dark:bg-slate-800/50 inline-block px-2">
                       // INFORMATION AND DETAILS ABOUT AVAILABLE PROGRAMS //
                     </p>
                   </div>
@@ -1557,21 +1557,21 @@ export default function App() {
                           <h4 className="text-xs font-bold font-mono text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                             <FileText size={14} /> Description
                           </h4>
-                          <p className="text-sm text-slate-700 leading-relaxed font-sans">{program.description}</p>
+                          <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-sans">{program.description}</p>
                         </div>
                         
                         <div>
                           <h4 className="text-xs font-bold font-mono text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                             <Shield size={14} /> Objective
                           </h4>
-                          <p className="text-sm text-slate-700 leading-relaxed font-sans">{program.objective}</p>
+                          <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-sans">{program.objective}</p>
                         </div>
 
                         <div className="mt-auto">
                           <h4 className="text-xs font-bold font-mono text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                             <Users size={14} /> Target Audience
                           </h4>
-                          <p className="text-sm text-slate-700 leading-relaxed font-sans">{program.targetAudience}</p>
+                          <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-sans">{program.targetAudience}</p>
                         </div>
                       </div>
                     </div>
@@ -1699,7 +1699,7 @@ export default function App() {
                                 </div>
                               </td>
                               <td className="p-4 border-r border-slate-200/10">
-                                <Badge variant={s.type === 'Synchronous' ? 'info' : s.type === 'Asynchronous' ? 'warning' : 'default'}>
+                                <Badge variant={s.type === 'Synchronous' ? 'success' : s.type === 'Asynchronous' ? 'info' : 'default'}>
                                   {s.type}
                                 </Badge>
                               </td>
