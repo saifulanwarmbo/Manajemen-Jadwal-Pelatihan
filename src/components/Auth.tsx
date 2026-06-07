@@ -28,18 +28,21 @@ export const Auth: React.FC<AuthProps> = ({ onCancel }) => {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full bg-white border border-slate-200 p-8 shadow-sm rounded-2xl border-slate-200 relative"
+        className="max-w-md w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 shadow-sm rounded-2xl relative"
       >
         {onCancel && (
           <button 
             onClick={onCancel}
-            className="absolute top-4 right-4 p-2 text-slate-900/50 hover:text-slate-900 transition-colors"
+            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
           >
             <ArrowLeft size={20} />
           </button>
         )}
-        <h1 className="text-3xl font-serif mb-2 tracking-tight text-slate-900">Manajemen Jadwal Pelatihan</h1>
-        <p className="text-slate-900/90 mb-8 font-mono text-sm uppercase tracking-wider italic">
+        <div className="flex justify-center mb-6">
+          <img src="/favicon.png" alt="SIPP Logo" className="w-24 h-24 object-contain rounded-2xl shadow-sm bg-white dark:bg-slate-800 p-2 border border-slate-200/50 dark:border-slate-700/50" referrerPolicy="no-referrer" />
+        </div>
+        <h1 className="text-3xl font-serif mb-2 tracking-tight text-slate-900 dark:text-slate-100 text-center">Manajemen Jadwal Pelatihan</h1>
+        <p className="text-slate-500 dark:text-slate-400 mb-8 font-mono text-xs uppercase tracking-wider italic text-center">
           // SISTEM MANAJEMEN PELATIHAN
         </p>
         
