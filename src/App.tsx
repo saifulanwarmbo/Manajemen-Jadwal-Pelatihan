@@ -1265,7 +1265,7 @@ export default function App() {
       {/* Sidebar */}
       <aside className="w-64 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col sticky top-0 h-screen z-10 px-4 py-4 gap-2 transition-colors duration-200">
         <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center gap-4">
-          <img src="/favicon.png" alt="SIPP Logo" className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-2xl shadow-sm bg-white dark:bg-slate-800 p-2 border border-slate-200/50 dark:border-slate-700/50 transition-all" referrerPolicy="no-referrer" />
+          <img src="/favicon.png" alt="SIPP Logo" className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-2xl shadow-sm bg-white p-2 border border-slate-200/50 transition-all" referrerPolicy="no-referrer" />
           <div className="text-center">
             <h2 className="text-lg font-bold tracking-tight leading-none font-serif">MANAJEMEN</h2>
             <h2 className="text-lg font-bold tracking-tight leading-none font-serif text-indigo-600 dark:text-indigo-400">JADWAL PELATIHAN</h2>
