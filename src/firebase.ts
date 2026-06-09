@@ -8,6 +8,18 @@ import {
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
+// Suppress benign Firestore clock skew warnings
+const originalConsoleError = console.error;
+console.error = (...args: any[]) => {
+  const isClockSkewWarning = args.some(arg => 
+    typeof arg === 'string' && arg.includes('Detected an update time that is in the future')
+  );
+  if (isClockSkewWarning) {
+    return; // Ignore this specific benign warning
+  }
+  originalConsoleError.apply(console, args);
+};
+
 const app = initializeApp(firebaseConfig);
 
 // Initialize Firestore with offline persistence

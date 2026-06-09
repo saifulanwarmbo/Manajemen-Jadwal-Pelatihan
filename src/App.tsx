@@ -41,7 +41,8 @@ import {
   FileText,
   Upload,
   Moon,
-  Sun
+  Sun,
+  Banknote
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -156,7 +157,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState<'dashboard' | 'schedule' | 'programs' | 'instructors' | 'instructor-calendar' | 'users' | 'login'>('schedule');
+  const [activeView, setActiveView] = useState<'dashboard' | 'schedule' | 'programs' | 'instructors' | 'instructor-calendar' | 'users' | 'login' | 'honorarium'>('schedule');
   
   const [activeTraining, setActiveTraining] = useState<string>(TRAINING_PROGRAMS[0]);
   
@@ -442,6 +443,26 @@ export default function App() {
       return matchesSearch && matchesType && matchesAngkatan;
     }).sort((a, b) => a.angkatan.localeCompare(b.angkatan) || a.dayNumber - b.dayNumber || a.startTime.localeCompare(b.startTime));
   }, [schedules, deferredSearchTerm, filterType, selectedAngkatan, activeTraining]);
+
+  // Honorarium Data
+  const honorariumData = useMemo(() => {
+    const data: Record<string, Record<string, number>> = {};
+    schedules.filter(s => s.trainingName === activeTraining).forEach(schedule => {
+      schedule.instructors.forEach(instructorName => {
+        if (!data[instructorName]) data[instructorName] = {};
+        if (!data[instructorName][schedule.angkatan]) data[instructorName][schedule.angkatan] = 0;
+        data[instructorName][schedule.angkatan] += Number(schedule.jp) || 0;
+      });
+    });
+    return Object.entries(data).sort((a, b) => a[0].localeCompare(b[0])).map(([name, angkatanJps]) => {
+      const angkatanEntries = Object.entries(angkatanJps).sort((a, b) => a[0].localeCompare(b[0]));
+      return {
+        name,
+        angkatanEntries,
+        totalJp: angkatanEntries.reduce((sum, [_, jp]) => sum + jp, 0),
+      };
+    });
+  }, [schedules, activeTraining]);
 
   // Grouping
   const groupedSchedules = useMemo(() => {
@@ -1250,7 +1271,7 @@ export default function App() {
   useEffect(() => {
     if (user && activeView === 'login') {
       setActiveView('dashboard');
-    } else if (!isAdmin && (activeView === 'instructor-calendar' || activeView === 'users')) {
+    } else if (!isAdmin && (activeView === 'instructor-calendar' || activeView === 'users' || activeView === 'honorarium')) {
       setActiveView('schedule');
     }
   }, [user, isAdmin, activeView]);
@@ -1310,6 +1331,12 @@ export default function App() {
           />
           {isAdmin && (
             <>
+              <SidebarItem 
+                icon={Banknote} 
+                label="Honorarium" 
+                active={activeView === 'honorarium'} 
+                onClick={() => setActiveView('honorarium')} 
+              />
               <SidebarItem 
                 icon={Calendar} 
                 label="Instructor Calendar" 
@@ -2172,6 +2199,84 @@ export default function App() {
                               No users found.
                             </td>
                           </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {activeView === 'honorarium' && (
+              <motion.div 
+                key="honorarium"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-6"
+              >
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6 shadow-md rounded-2xl">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className="text-xl font-bold tracking-tight uppercase flex items-center gap-2">
+                        <Banknote className="text-indigo-600 dark:text-indigo-400" />
+                        Honorarium Pengajar
+                      </h2>
+                      <p className="text-xs font-mono tracking-wide mt-1 text-slate-500">PROGRAM: {activeTraining}</p>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-indigo-600 text-white shadow-sm font-mono text-xs tracking-wide font-sans">
+                          <th className="p-4 font-bold border-r border-[#F8FAFC]/10 w-1/4">Nama Instruktur</th>
+                          <th className="p-4 font-bold border-r border-[#F8FAFC]/10">Angkatan</th>
+                          <th className="p-4 font-bold border-r border-[#F8FAFC]/10 text-center w-24">Jumlah JP</th>
+                          <th className="p-4 font-bold text-right w-48">Honorarium (Rp)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                        {honorariumData.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="p-8 text-center font-mono opacity-90 italic text-slate-500">
+                              Belum ada data honorarium untuk program {activeTraining}.
+                            </td>
+                          </tr>
+                        ) : (
+                          honorariumData.map((instructor, index) => (
+                            <React.Fragment key={instructor.name}>
+                              {instructor.angkatanEntries.map(([angkatan, jp], aIndex) => (
+                                <tr key={`${instructor.name}-${angkatan}`} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-800/50 transition-colors group/row">
+                                  {aIndex === 0 && (
+                                    <td rowSpan={instructor.angkatanEntries.length} className="p-4 font-bold text-sm bg-white dark:bg-slate-800 border-r border-slate-200/10 align-top">
+                                      {instructor.name}
+                                    </td>
+                                  )}
+                                  <td className="p-4 text-sm font-mono border-r border-slate-200/10">
+                                    Angkatan {angkatan}
+                                  </td>
+                                  <td className="p-4 text-sm text-center border-r border-slate-200/10 font-mono font-bold">
+                                    {jp}
+                                  </td>
+                                  <td className="p-4 text-sm font-mono font-bold text-right text-indigo-700 dark:text-indigo-400 bg-indigo-50/30 dark:bg-indigo-900/10">
+                                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(jp * 200000)}
+                                  </td>
+                                </tr>
+                              ))}
+                              <tr className="bg-slate-50 dark:bg-slate-800/80 border-b-2 border-slate-200 dark:border-slate-700">
+                                <td colSpan={2} className="p-3 text-right text-xs tracking-wide font-sans font-bold uppercase text-slate-500 dark:text-slate-400">
+                                  Total {instructor.name}
+                                </td>
+                                <td className="p-3 text-center font-bold font-mono border-x border-slate-200/10">
+                                  {instructor.totalJp}
+                                </td>
+                                <td className="p-3 text-right font-bold text-lg text-emerald-600 dark:text-emerald-400 font-mono">
+                                  {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(instructor.totalJp * 200000)}
+                                </td>
+                              </tr>
+                            </React.Fragment>
+                          ))
                         )}
                       </tbody>
                     </table>
