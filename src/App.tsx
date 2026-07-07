@@ -906,7 +906,14 @@ export default function App() {
         body: formData,
       });
 
-      const data = await res.json();
+      let data;
+      const textResponse = await res.text();
+      try {
+        data = JSON.parse(textResponse);
+      } catch (parseError) {
+        throw new Error(`Server returned non-JSON response (Status: ${res.status}). Response: ${textResponse.slice(0, 100)}...`);
+      }
+
       if (!res.ok) throw new Error(data.error || 'Failed to extract schedule');
 
       const extractedSchedules = data.schedules as ScheduleEntry[];
@@ -1271,7 +1278,7 @@ export default function App() {
   useEffect(() => {
     if (user && activeView === 'login') {
       setActiveView('dashboard');
-    } else if (!isAdmin && (activeView === 'instructor-calendar' || activeView === 'users' || activeView === 'honorarium')) {
+    } else if (!isAdmin && (activeView === 'instructor-calendar' || activeView === 'users' || activeView === 'honorarium' || activeView === 'instructors')) {
       setActiveView('schedule');
     }
   }, [user, isAdmin, activeView]);
@@ -1323,14 +1330,14 @@ export default function App() {
             active={activeView === 'schedule'} 
             onClick={() => setActiveView('schedule')} 
           />
-          <SidebarItem 
-            icon={Users} 
-            label="Instructors" 
-            active={activeView === 'instructors'} 
-            onClick={() => setActiveView('instructors')} 
-          />
           {isAdmin && (
             <>
+              <SidebarItem 
+                icon={Users} 
+                label="Instructors" 
+                active={activeView === 'instructors'} 
+                onClick={() => setActiveView('instructors')} 
+              />
               <SidebarItem 
                 icon={Banknote} 
                 label="Honorarium" 

@@ -59,7 +59,7 @@ For each schedule entry, extract:
 Return ONLY the JSON array.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.1-pro-preview",
+      model: "gemini-2.5-flash",
       contents: { parts: [filePart, { text: prompt }] },
       config: {
         responseMimeType: "application/json",
@@ -97,11 +97,9 @@ Return ONLY the JSON array.`;
     }
   } catch (error: any) {
     let errMsg = error.message || "Something went wrong";
-    if (errMsg.includes("API key not valid") || errMsg.includes("INVALID_ARGUMENT")) {
+    console.error("Extraction error:", errMsg, error);
+    if (errMsg.includes("API key not valid") || errMsg.includes("not valid")) {
       errMsg = "Invalid Gemini API Key. Please click the Settings menu and set a valid API key.";
-      console.warn("Extraction warning:", errMsg);
-    } else {
-      console.error("Extraction error:", error);
     }
     res.status(500).json({ error: errMsg });
   }
